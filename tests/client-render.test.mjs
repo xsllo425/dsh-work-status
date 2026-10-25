@@ -535,12 +535,15 @@ test("不同的内联脚本逐条展示，不能按简写合并", async () => {
   assert.equal(collect(view.tree, byClass('dws-item')).length, 2);
 });
 
-test("命令优先显示宿主说明，不从格式串猜目的", async () => {
+test("行内先写看得懂的动作，宿主说明只进悬停与展开", async () => {
   const mount = await loadBadge();
-  const view = mount(props({phase:'done',items:[call('ops_bash', 'printf "%-14s %s\\n" x; rg version package.json', 'ok', {description:'Check version field consistency and usage'})]}));
+  const view = mount(props({phase:'done',items:[call('ops_bash', 'printf "%-14s %s\n" x; rg version package.json', 'ok', {description:'Check version field consistency and usage'})]}));
   view.click(byClass('dws-chip'));
-  assert.match(view.text(), /Check version field consistency and usage/);
-  assert.doesNotMatch(view.text(), /找代码|%-14s/);
+  const rowText = view.text();
+  assert.doesNotMatch(rowText, /Check version field consistency and usage/, "行内不摆英文说明");
+  assert.match(rowText, /找代码|执行命令|跑脚本|跑测试/, "行内要有人话动作");
+  const row = collect(view.tree, byClass("dws-row"))[0];
+  assert.match(String(row && row.props && row.props.title || ""), /Check version field consistency/, "悬停仍能看到说明");
 });
 
 test("思考、工具执行、完成均常显四条，进行中计入四条上限", async () => {
