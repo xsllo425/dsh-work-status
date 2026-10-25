@@ -191,7 +191,7 @@ test("点开面板：当前动作在标题，最近几步各说各的事", async
   assert.equal(new Set(labels).size, labels.length, `行文案重复：${labels.join(" | ")}`);
 });
 
-test("失败单独成段：错误原文 + 未恢复/已恢复标签", async () => {
+test("失败：还没补上的挂着「未恢复」，已被后续成功接替的划掉转灰", async () => {
   const mount = await loadBadge();
   const errorItems = [
     call("ops_bash", "node --test", "error", { err: "expected 8, got 7" }),
@@ -199,13 +199,16 @@ test("失败单独成段：错误原文 + 未恢复/已恢复标签", async () =
   ];
   const view = mount(props({ items: errorItems, counts: { steps: 2, tools: 2, errors: 1 } }));
   view.click(byClass("dws-chip"));
+  const settled = collect(view.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true");
+  assert.equal(settled.length, 1, "重试成功的那次失败应被划掉");
   const text = view.text();
-  assert.match(text, /expected 8, got 7/);
-  assert.match(text, /已恢复/);
+  assert.doesNotMatch(text, /已恢复|未恢复/, "已了结的失败不再挂标签");
+  assert.doesNotMatch(text, /expected 8, got 7/, "错误原文收进悬停");
 
   const fresh = mount(props({ items: [call("ops_bash", "npm run lint", "error", { err: "boom" })], counts: { steps: 1, tools: 1, errors: 1 } }));
   fresh.click(byClass("dws-chip"));
   assert.match(fresh.text(), /未恢复/);
+  assert.match(fresh.text(), /boom/);
 });
 
 test("进度分三种模式：有 todo 是确定，没数据只说未知", async () => {
