@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Agent Activity",
-    "description": "Shows what the agent has already done and what it is about to do while it is still working: tool calls, durations, the queued next step and the plan behind it."
+    "title": "Work status",
+    "description": "One row above the composer: what the agent is doing now, how many steps this turn has finished, three separate clocks (model reasoning / tool calls / context compression) and failures. Open it for the timeline, the previous turn and the session log. No model calls, no network requests."
   }
 }
