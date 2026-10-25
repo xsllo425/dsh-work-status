@@ -174,7 +174,7 @@ test("收起态只有一个徽标：用时、呼吸点，读屏念得出现在�
   const chips = collect(view.tree, byClass("dws-chip"));
   assert.equal(chips.length, 1);
   assert.match(textOf(chips[0]), /1m00s|60s/);
-  assert.match(String(chips[0].props["aria-label"]), /改文件 lib\/activity\.js/);
+  assert.match(String(chips[0].props["aria-label"]), /改文件 数据代码/);
 });
 
 test("点开面板：当前动作在标题，最近几步各说各的事", async () => {
@@ -183,7 +183,7 @@ test("点开面板：当前动作在标题，最近几步各说各的事", async
   view.click(byClass("dws-chip"));
   assert.equal(collect(view.tree, byClass("dws-panel")).length, 1);
   const head = textOf(collect(view.tree, byClass("dws-head-text"))[0]);
-  assert.match(textOf(view.tree), /改文件\s*lib\/client\.js/, "展开面板后正文里能看到最近的动作");
+  assert.match(textOf(view.tree), /改文件s*界面代码/, "展开面板后正文里能看到最近的动作");
 
   const rows = collect(view.tree, byClass("dws-row"));
   assert.ok(rows.length >= 3, `最近只画了 ${rows.length} 行`);
@@ -464,7 +464,7 @@ test("上一轮单独成块：写明第几轮、起止时间、当时的目标�
   assert.match(textOf(block), /先分析，先不改/);
   view.click(byClass("dws-prev-head"));
   const opened = textOf(collect(view.tree, byClass("dws-prev"))[0]);
-  assert.match(opened, /docs\/HANDOFF\.md/);
+  assert.match(opened, /交接文档/);
   assert.match(opened, /m09000-m09010/);
   assert.match(opened, /推理 9.0s · 工具 400ms/);
 });
