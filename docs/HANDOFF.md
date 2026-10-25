@@ -1,9 +1,9 @@
-# 交接：dsh-work-status 开发接手（0.4.10）
+# 交接：dsh-work-status 开发接手（0.4.11）
 
 ## 一、位置与安装链
 
 - 源码：`E:/DSH/dsh-work-status`（git 仓库，分支以 `git branch` 为准）
-- 包名 / 版本：`dsh-work-status` / `0.4.10`（`package.json`）
+- 包名 / 版本：`dsh-work-status` / `0.4.11`（`package.json`）
 - 装机：`plugin-manager` 执行的 `install link:E:/DSH/dsh-work-status`
   - 落地路径：`C:/Users/17416/.dsh/profiles/desktop/node_modules/dsh-work-status` → 软链回源码目录，改源码即改装机
   - 加载登记：desktop profile 的 `package.json` → `dsh.profile.bundles` 含 `work-status`；`cordis.patch.yml` 含 `- id: work-status`
@@ -15,7 +15,7 @@
 | 用途 | 命令 |
 | --- | --- |
 | 语法检查 | `node --check lib/client.js`（以及 `lib/activity.js`、`lib/index.js`） |
-| 全量测试 | `node --test tests/*.test.mjs`（0.4.10 上 65 项） |
+| 全量测试 | `node --test tests/*.test.mjs`（0.4.11 上 66 项） |
 | 包结构自检 | `node scripts/check-manifest.mjs`（校验 `package.json`、`dsh.client`、`cordis.patch.yml`、插槽名白名单） |
 | 抓真机窗口 | `pwsh -NoProfile -File E:/DSH/patch/capture-dsh-window.ps1 -OutFile <png>`（必须 pwsh 7） |
 | 重启 DSH | `pwsh -NoProfile -File E:/DSH/patch/restart-dsh.ps1` |

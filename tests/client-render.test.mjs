@@ -542,3 +542,13 @@ test("命令优先显示宿主说明，不从格式串猜目的", async () => {
   assert.match(view.text(), /Check version field consistency and usage/);
   assert.doesNotMatch(view.text(), /找代码|%-14s/);
 });
+
+test("思考、工具执行、完成均常显四条，进行中计入四条上限", async () => {
+  for (const phase of ['thinking', 'tool', 'done']) {
+    const mount = await loadBadge();
+    const items = FIVE_CALLS.map((item, index) => ({...item, status: phase === 'tool' && index === 4 ? 'running' : 'ok'}));
+    const view = mount(props({phase, items}));
+    view.click(byClass('dws-chip'));
+    assert.equal(collect(view.tree, byClass('dws-item')).length, 4, phase);
+  }
+});
