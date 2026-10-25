@@ -1,7 +1,7 @@
 {
   "name": "dsh-work-status",
-  "version": "0.4.8",
-  "description": "独立的 DSH 插件：用最少的注意力看清 agent 正在做什么、做完了什么、有没有卡住——状态优先，日志其次。",
+  "version": "0.4.10",
+  "description": "DeepSeek Harness plugin: one compact row above the composer telling you what the agent is doing, what it finished, and whether anything is stuck. DSH 插件：用最少的注意力看清 agent 的工作状态。",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -21,16 +21,21 @@
     "README.md",
     "README.zh.md",
     "LICENSE",
+    "NOTICE",
     "scripts/check-manifest.mjs",
     "tests/activity.test.mjs",
-    "tests/client-render.test.mjs"
+    "tests/client-render.test.mjs",
+    "tests/semantics.test.mjs",
+    "tests/decisions.test.mjs",
+    "tests/acp-shapes.test.mjs"
   ],
   "keywords": [
     "dsh-plugin",
     "deepseek-harness",
+    "dsh",
+    "deepseek",
     "activity",
     "progress",
-    "plan",
     "agent-observability"
   ],
   "engines": {

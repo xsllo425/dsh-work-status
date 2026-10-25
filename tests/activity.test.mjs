@@ -24,7 +24,7 @@ function replay(events) {
 test("the projection registers the documented key and carries a wire view", () => {
   assert.equal(ACTIVITY_KEY, "workStatus");
   assert.equal(activityProjection.key, "workStatus");
-  assert.equal(activityProjection.stateVersion, 15);
+  assert.equal(activityProjection.stateVersion, 17);
   assert.equal(typeof activityProjection.stateSchema.parse, "function");
   assert.equal(typeof activityProjection.wire.view, "function");
   const blank = emptyState();
@@ -394,4 +394,20 @@ test("会话总账跨轮累计，逐轮记录带起止、目标、模型回合�
   assert.equal(last.modelMs, 3500);
   assert.equal(last.toolMs, 500);
   assert.equal(last.phase, "done");
+});
+
+test("工具说明保留为独立字段，不丢掉宿主显示的调用目的", () => {
+  const result = describeCall(JSON.stringify({ command: 'printf "%-14s %s\\n" x; rg version package.json', description: 'Check version field consistency and usage' }));
+  assert.equal(result.description, 'Check version field consistency and usage');
+});
+
+test("并行调用部分完成后仍处于工具执行阶段", () => {
+  const state = replay([
+    ev('turn/start', 1000, {turn: 1}),
+    ev('tool/call', 1010, {callId:'a', name:'read', arguments:'{}'}),
+    ev('tool/call', 1020, {callId:'b', name:'write', arguments:'{}'}),
+    ev('tool/result', 1030, {message:{toolCallId:'a'}}),
+  ]);
+  assert.equal(state.phase, 'tool');
+  assert.equal(state.toolOpen, 1);
 });

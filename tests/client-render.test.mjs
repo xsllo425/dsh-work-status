@@ -524,3 +524,21 @@ test("底栏“日志”：会话总计与逐轮记录，新的在前；再点�
   view.click(byClass("dws-log-toggle"));
   assert.equal(collect(view.tree, byClass("dws-log")).length, 0);
 });
+
+test("不同的内联脚本逐条展示，不能按简写合并", async () => {
+  const mount = await loadBadge();
+  const view = mount(props({phase:'done',items:[
+    call('ops_bash', 'node -e "console.log(1)"', 'ok', {id:'a'}),
+    call('ops_bash', 'node -e "console.log(2)"', 'ok', {id:'b'}),
+  ]}));
+  view.click(byClass('dws-chip'));
+  assert.equal(collect(view.tree, byClass('dws-item')).length, 2);
+});
+
+test("命令优先显示宿主说明，不从格式串猜目的", async () => {
+  const mount = await loadBadge();
+  const view = mount(props({phase:'done',items:[call('ops_bash', 'printf "%-14s %s\\n" x; rg version package.json', 'ok', {description:'Check version field consistency and usage'})]}));
+  view.click(byClass('dws-chip'));
+  assert.match(view.text(), /Check version field consistency and usage/);
+  assert.doesNotMatch(view.text(), /找代码|%-14s/);
+});

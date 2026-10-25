@@ -1,9 +1,9 @@
-# 交接：dsh-work-status 开发接手（0.4.5）
+# 交接：dsh-work-status 开发接手（0.4.10）
 
 ## 一、位置与安装链
 
 - 源码：`E:/DSH/dsh-work-status`（git 仓库，分支以 `git branch` 为准）
-- 包名 / 版本：`dsh-work-status` / `0.4.5`（`package.json`）
+- 包名 / 版本：`dsh-work-status` / `0.4.10`（`package.json`）
 - 装机：`plugin-manager` 执行的 `install link:E:/DSH/dsh-work-status`
   - 落地路径：`C:/Users/17416/.dsh/profiles/desktop/node_modules/dsh-work-status` → 软链回源码目录，改源码即改装机
   - 加载登记：desktop profile 的 `package.json` → `dsh.profile.bundles` 含 `work-status`；`cordis.patch.yml` 含 `- id: work-status`
@@ -15,7 +15,7 @@
 | 用途 | 命令 |
 | --- | --- |
 | 语法检查 | `node --check lib/client.js`（以及 `lib/activity.js`、`lib/index.js`） |
-| 全量测试 | `node --test tests/*.test.mjs`（0.4.4 上 61 项） |
+| 全量测试 | `node --test tests/*.test.mjs`（0.4.10 上 65 项） |
 | 包结构自检 | `node scripts/check-manifest.mjs`（校验 `package.json`、`dsh.client`、`cordis.patch.yml`、插槽名白名单） |
 | 抓真机窗口 | `pwsh -NoProfile -File E:/DSH/patch/capture-dsh-window.ps1 -OutFile <png>`（必须 pwsh 7） |
 | 重启 DSH | `pwsh -NoProfile -File E:/DSH/patch/restart-dsh.ps1` |
@@ -34,7 +34,7 @@
 export const ACTIVITY_KEY = "workStatus";
 export const activityProjection = {
   key: ACTIVITY_KEY,
-  stateVersion: 15,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
+  stateVersion: 17,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
   stateSchema: plainSchema,  // 宽松 schema
   init: () => EMPTY,
   apply: (state, event) => applyEvent(state, event),
@@ -97,7 +97,7 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 
 - 面板结构：`dws-head`（固定）/ `dws-body`（唯一滚动区；日志打开时换成 `LogView`）/ `dws-foot`（固定：左「日志」「复制」，右「收起」）
 - 宽 380px，右沿 = 对话滚动区内容右沿 − 8px（`scrollBoxOf()`），底沿 = 锚点上沿 − 8px
-- 高度上限用小数尺寸算、向上取整，差 1px 以内不改（整数量法会在 316/317 之间来回切，内容一跳一跳）
+- 高度上限只取可用空间；首次定位使用 layout effect，避免动画缩放影响高度。
 - 面板 `position: fixed`，打开时 `fit()` 按锚点（桌宠或徽标）的视口坐标算目标位置，再经 `fixedFrameOf()` 换算到 fixed 实际的包含块（最近的带 transform / filter / contain / container-type 等的祖先，没有就是视口）
 - `maxHeight = min(自然高度, 锚点上方 8px 到对话滚动区顶边下 8px)`；自然高度 = 面板高 − `.dws-body` 可见高 + 其内容高，**不能**先设 `max-height: none` 再量（会把滚动位置归零，0.4.2 的滚轮失效即此）；面板内部滚动不触发 `fit()`
 - 所有取 document 的地方用 `ownDocument()`（root / panel / chip 任一）：桌宠模式不渲染徽标，`chipRef` 为空
@@ -137,22 +137,24 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 | 改折叠/暂停判定 | `lib/activity.js` 的 `decision` / `stall` 逻辑 |
 | 新增文案 | `MESSAGES_ZH` / `MESSAGES_EN` 同名键 |
 
-## 九、未在真机确认的事项（0.4.5）
+## 九、已验证与未验证
 
-0.4.3 已用调试端口在真机确认：滚轮可滚、溢出时顶部停在标题栏下、「收起」常驻、时间段对齐、分割线在。仍未确认：输入框真正被拉高时的表现（只用面板内占位块模拟过溢出）；「思考中」行在进行中的轮次里的样子。
+本机（Windows、Electron 桌面端、dsh-claude-style 主题）已确认：右键桌宠开合面板、面板在输入框上方定位、面板内滚动不带动主窗口、溢出时顶部停在标题栏下、「收起」常驻、时间列与圆环对齐、上下文维护行并入时间轨。
 
-- 真机检查方法：带 `--remote-debugging-port=9223 --remote-allow-origins=http://127.0.0.1:9223` 启动，用 CDP `Runtime.evaluate`（需要 `getEventListeners` 时加 `includeCommandLineAPI`）；滚轮用 `Input.dispatchMouseEvent` 的 `mouseWheel`，先在对话区做对照
+边界与未覆盖项：
 
-
-0.4.1 遗留：
-
-1. 桌宠右键是否能打开面板（0.4.0 / 0.4.1 都把 `contextmenu` 监听移到常驻 effect、捕获阶段并 `preventDefault`）
-2. 隐藏 `.dws-rail::before` 后，圆环与时间列的对齐是否与预期一致
-3. 输入框拉高时，面板顶部是否仍在视口内
-4. 面板内滚动是否不再带动主窗口
+- 输入框被拉到很高（接近视口一半以上）时，面板顶部仍可能贴到标题栏边缘；自动化测试只覆盖了合成高度。
+- 只在本机主题（dsh-claude-style，Claude / DeepSeek 两档配色）下验证；其他主题依赖同一批 `--dsw-alias-*` 令牌，但未逐一实测。
+- 只在 Windows 桌面端验证；Web UI 与 macOS 未实测。
+- 桌宠入口依赖主题的 `.dsh-claude-deepy` / `.dsh-claude-crab` 类名，主题改名后会自动回退到「输入框上方的徽标」。
+- 真机排查方法：带 `--remote-debugging-port=9223 --remote-allow-origins=http://127.0.0.1:9223` 启动，用 CDP `Runtime.evaluate`；滚轮用 `Input.dispatchMouseEvent` 的 `mouseWheel`，先在对话区做对照。
 
 ## 十、沟通约束记录
 
 - 用户多次要求「先分析、先不改」；排版改动前先给方案再动手
 - 用户明确过「只去掉竖线，其他不变」（0.4.1 按此执行）
 - 未真机确认前不宣称修好
+
+## 0.4.10 接手状态
+用户明确要求暂不重启。新版宿主字段与阶段修复待重启加载；参见 docs/VERIFICATION-0.4.10.md。动作逐条显示，不再按简写合并；命令优先显示 description，说明来自模型调用参数，不能当作成功证据。
+

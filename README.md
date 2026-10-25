@@ -80,7 +80,7 @@ In the desktop app, Plugin Manager → 添加插件 also accepts the repository 
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 61 tests, no dependencies
+node --test tests/*.test.mjs          # 65 tests, no dependencies
 node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
 ```
 
@@ -88,7 +88,7 @@ There are no runtime or dev dependencies; tests run on plain Node 24.
 
 ```
 lib/index.js        host entry — registers the session projection
-lib/activity.js     pure event fold (stateVersion 15, key "workStatus")
+lib/activity.js     pure event fold (stateVersion 16, key "workStatus")
 lib/client.js       web UI: chip, panel, timeline, log, dictionaries, CSS
 locale/*.json       plugin-list metadata (zh/en)
 icon.svg            plugin icon
