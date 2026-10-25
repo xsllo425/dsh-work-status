@@ -555,3 +555,26 @@ test("思考、工具执行、完成均常显四条，进行中计入四条上�
     assert.equal(collect(view.tree, byClass('dws-item')).length, 4, phase);
   }
 });
+
+test("压缩失败后同类成功：失败那行划掉转灰，不再挂未恢复", async () => {
+  const mount = await loadBadge();
+  const op = (over) => Object.assign({
+    id: "1", acp: "compress", status: "ok", range: "m00001–m00005",
+    at: NOW - 20000, ms: 30, saved: 0, block: "", error: "", detail: "",
+  }, over);
+  const view = mount(props({
+    items: [],
+    acp: {
+      ops: [
+        op({ id: "1", status: "error", at: NOW - 20000, ms: 27, error: "Compression FAILED: refs are DEAD" }),
+        op({ id: "2", status: "ok", at: NOW - 10000, ms: 80, range: "m00006–m00020", saved: 25000 }),
+      ],
+    },
+  }));
+  view.click(byClass("dws-chip"));
+  const settled = collect(view.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true");
+  assert.equal(settled.length, 1, "失败那行应被标记为已了结");
+  const text = textOf(view.tree);
+  assert.doesNotMatch(text, /未恢复/, "有后续成功时不再挂未恢复");
+  assert.doesNotMatch(text, /没压成：范围已失效/, "错误说明不再当正文");
+});
