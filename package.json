@@ -1,0 +1,64 @@
+{
+  "name": "dsh-work-status",
+  "version": "0.4.8",
+  "description": "独立的 DSH 插件：用最少的注意力看清 agent 正在做什么、做完了什么、有没有卡住——状态优先，日志其次。",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/activity.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh.md",
+    "LICENSE",
+    "scripts/check-manifest.mjs",
+    "tests/activity.test.mjs",
+    "tests/client-render.test.mjs"
+  ],
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "activity",
+    "progress",
+    "plan",
+    "agent-observability"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-rc.2"
+  },
+  "scripts": {
+    "check": "node scripts/check-manifest.mjs",
+    "test": "node --test tests/activity.test.mjs tests/client-render.test.mjs"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "author": "oxygenforce",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oxygenforce/dsh-work-status.git"
+  },
+  "homepage": "https://github.com/oxygenforce/dsh-work-status#readme",
+  "bugs": {
+    "url": "https://github.com/oxygenforce/dsh-work-status/issues"
+  }
+}

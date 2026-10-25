@@ -1,0 +1,7 @@
+dsh-work-status
+Copyright (c) 2026 the dsh-work-status authors
+
+This project is derived in part from dsh-agent-activity 0.9.0
+(https://github.com/oxygenforce/dsh-agent-activity), licensed under the MIT License.
+Its copyright notice is retained in LICENSE and this file serves as the required
+attribution. The fork's own code lives under the same MIT terms.
