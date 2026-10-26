@@ -1,5 +1,7 @@
 # dsh-work-status
 
+> One line tells you what the agent is doing; click once for the goal, the current step, the last few records and the previous turn.
+
 [![ci](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![DeepSeek Harness plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe.svg)](https://github.com/topics/dsh-plugin)
@@ -30,7 +32,9 @@ Open it:
                                    日志 · 复制 · 收起
 ```
 
-![panel, light](docs/screenshots/panel-light.png)
+![panel, real screenshot](docs/screenshots/real-panel-redacted.png)
+
+*Real screenshot; sidebar, session title and messages are blurred.*
 
 ![panel, dark](docs/screenshots/panel-dark.png)
 

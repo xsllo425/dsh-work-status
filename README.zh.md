@@ -1,5 +1,7 @@
 # dsh-work-status
 
+> 一行状态看清 Agent 在做什么；点开是目标、当前步、最近的记录与上一轮。
+
 [![ci](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![DeepSeek Harness plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe.svg)](https://github.com/topics/dsh-plugin)
