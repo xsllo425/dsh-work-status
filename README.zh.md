@@ -119,6 +119,8 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 
 想立刻清掉它：`npm run reset-stats`（先看路径可加 `-- --dry`）。
 
+介绍用的 7 页 PPT：[docs/dsh-work-status-intro.pptx](docs/dsh-work-status-intro.pptx)（封面、界面、口径、边界、安装）。
+
 ## 边界
 
 - 显示的一切都来自会话事件流；工具结果没回来时，那一行写「结果未知」，不猜。

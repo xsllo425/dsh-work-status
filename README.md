@@ -119,6 +119,8 @@ The client never folds events; it renders the projection. When the projection's 
 
 To wipe it: `npm run reset-stats` (add `-- --dry` to see the path first).
 
+A 7-slide intro deck: [docs/dsh-work-status-intro.pptx](docs/dsh-work-status-intro.pptx).
+
 ## Limits
 
 - Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
