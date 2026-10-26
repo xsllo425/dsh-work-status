@@ -559,7 +559,7 @@ test("思考、工具执行、完成均常显四条，进行中计入四条上�
   }
 });
 
-test("压缩失败后同类成功：失败那行划掉转灰，不再挂未恢复", async () => {
+test("压缩失败后同一段成功：失败那行划掉转灰，不再挂未恢复", async () => {
   const mount = await loadBadge();
   const op = (over) => Object.assign({
     id: "1", acp: "compress", status: "ok", range: "m00001–m00005",
@@ -569,8 +569,8 @@ test("压缩失败后同类成功：失败那行划掉转灰，不再挂未恢�
     items: [],
     acp: {
       ops: [
-        op({ id: "1", status: "error", at: NOW - 20000, ms: 27, error: "Compression FAILED: refs are DEAD" }),
-        op({ id: "2", status: "ok", at: NOW - 10000, ms: 80, range: "m00006–m00020", saved: 25000 }),
+        op({ id: "1", status: "failed", at: NOW - 20000, ms: 27, error: "Compression FAILED: refs are DEAD" }),
+        op({ id: "2", status: "ok", at: NOW - 10000, ms: 80, range: "m00001–m00005", saved: 25000 }),
       ],
     },
   }));
@@ -580,6 +580,27 @@ test("压缩失败后同类成功：失败那行划掉转灰，不再挂未恢�
   const text = textOf(view.tree);
   assert.doesNotMatch(text, /未恢复/, "有后续成功时不再挂未恢复");
   assert.doesNotMatch(text, /没压成：范围已失效/, "错误说明不再当正文");
+});
+
+test("压缩失败、下一段成功：不把两段混成一次恢复", async () => {
+  const mount = await loadBadge();
+  const op = (over) => Object.assign({
+    id: "1", acp: "compress", status: "ok", range: "m00001–m00005",
+    at: NOW - 20000, ms: 30, saved: 0, block: "", error: "", detail: "",
+  }, over);
+  const view = mount(props({
+    items: [],
+    acp: {
+      ops: [
+        op({ id: "1", status: "failed", at: NOW - 20000, ms: 27, range: "m00001–m00005" }),
+        op({ id: "2", status: "ok", at: NOW - 10000, ms: 80, range: "m00006–m00020", saved: 25000 }),
+      ],
+    },
+  }));
+  view.click(byClass("dws-chip"));
+  const settled = collect(view.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true");
+  assert.equal(settled.length, 0, "压的是别的段，不能算恢复");
+  assert.match(textOf(view.tree), /未恢复/);
 });
 
 test("动作对象按目录职责与扩展名归类，认不出的仍写文件名", async () => {
@@ -639,4 +660,30 @@ test("冷启动没有本会话样本时，用跨会话历史垫底并标明来�
   const text = view.text();
   assert.match(text, /同类通常/, "有历史就给出区间");
   assert.match(text, /据历史/, "并且要说清这段参照来自别的会话");
+});
+
+test("工具失败后同一目标再成功：前面那次划掉转灰；换个工具操作同一文件不算恢复", async () => {
+  const mount = await loadBadge();
+  const same = mount(props({
+    counts: { steps: 2, tools: 2, errors: 1 },
+    items: [
+      call("read", "lib/fail.js", "error", { key: "tool|read|path|/lib/fail.js", err: "ENOENT: no such file" }),
+      call("read", "lib/fail.js", "ok", { key: "tool|read|path|/lib/fail.js" }),
+    ],
+  }));
+  same.click(byClass("dws-chip"));
+  const settled = collect(same.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true");
+  assert.equal(settled.length, 1, "同工具同目标后来又成功，失败那条应被了结");
+  assert.doesNotMatch(same.text(), /未恢复/);
+
+  const other = mount(props({
+    counts: { steps: 2, tools: 2, errors: 1 },
+    items: [
+      call("read", "lib/fail.js", "error", { key: "tool|read|path|/lib/fail.js", err: "ENOENT: no such file" }),
+      call("edit", "lib/fail.js", "ok", { key: "tool|edit|path|/lib/fail.js" }),
+    ],
+  }));
+  other.click(byClass("dws-chip"));
+  assert.equal(collect(other.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true").length, 0);
+  assert.match(other.text(), /未恢复/);
 });

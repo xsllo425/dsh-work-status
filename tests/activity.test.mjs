@@ -24,7 +24,7 @@ function replay(events) {
 test("the projection registers the documented key and carries a wire view", () => {
   assert.equal(ACTIVITY_KEY, "workStatus");
   assert.equal(activityProjection.key, "workStatus");
-  assert.equal(activityProjection.stateVersion, 17);
+  assert.equal(activityProjection.stateVersion, 18);
   assert.equal(typeof activityProjection.stateSchema.parse, "function");
   assert.equal(typeof activityProjection.wire.view, "function");
   const blank = emptyState();
@@ -410,4 +410,58 @@ test("并行调用部分完成后仍处于工具执行阶段", () => {
   ]);
   assert.equal(state.phase, 'tool');
   assert.equal(state.toolOpen, 1);
+});
+
+test("每条操作都带可恢复键：同工具同目标才算同类，上下文维护认范围", () => {
+  const state = replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "read", arguments: '{"path":"/a/x.js"}' }),
+    ev("tool/call", 1200, { turn: 1, step: 1, callId: "c2", name: "compress", arguments: '{"startId":"m00001","endId":"m00005"}' }),
+  ]);
+  assert.equal(state.items[0].key, "tool|read|path|/a/x.js");
+  assert.equal(state.items[1].key.startsWith("ctx|compress|"), true);
+  assert.match(state.items[1].key, /m00001/);
+});
+
+test("结果一定结账：条目被挤出显示窗口，工具账也不再挂起", () => {
+  const events = [ev("turn/start", 1000, { turn: 1 })];
+  for (let index = 0; index < 40; index += 1) {
+    events.push(ev("tool/call", 1100 + index * 10, { turn: 1, step: 1, callId: "k" + index, name: "read", arguments: '{"path":"/a/f' + index + '.js"}' }));
+  }
+  for (let index = 0; index < 40; index += 1) {
+    events.push(ev("tool/result", 1600 + index * 10, { turn: 1, step: 1, message: { toolCallId: "k" + index, isError: false } }));
+  }
+  const state = replay(events);
+  assert.equal(state.toolOpen, 0, "最后一个结果之后不该还有未结的调用");
+  assert.equal(state.phase, "thinking");
+  assert.ok(state.toolMs > 0, "工具耗时要算进来");
+  assert.equal(state.counts.steps, 40);
+});
+
+test("重复的 turn/end 不会重复结算：历史只记一条，结束时刻不变", () => {
+  const state = replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "read", arguments: "{}" }),
+    ev("tool/result", 1200, { turn: 1, step: 1, message: { toolCallId: "c1", isError: false } }),
+    ev("turn/end", 2000, { turn: 1, reason: { kind: "completed" } }),
+    ev("turn/end", 9000, { turn: 1, reason: { kind: "completed" } }),
+  ]);
+  assert.equal(state.endedAt, 2000);
+  assert.equal(state.history.filter((sample) => sample.turn === 1).length, 1);
+});
+
+test("本轮上下文维护总账：次数、省下的量、失败数不受显示窗口影响", () => {
+  const state = replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "compress", arguments: '{"startId":"m00001","endId":"m00005"}' }),
+    ev("tool/result", 1200, {
+      turn: 1, step: 1,
+      message: { toolCallId: "c1", isError: false, content: [{ type: "text", text: "[Compressed m00001–m00005 → 1 block(s), ~1000 tokens saved.]" }] },
+    }),
+    ev("tool/call", 1300, { turn: 1, step: 1, callId: "c2", name: "compress", arguments: '{"startId":"m00006","endId":"m00009"}' }),
+    ev("tool/result", 1400, { turn: 1, step: 1, message: { toolCallId: "c2", isError: true } }),
+  ]);
+  assert.equal(state.turnCtx.n, 2);
+  assert.equal(state.turnCtx.fails, 1);
+  assert.equal(state.turnCtx.saved, 1000);
 });
