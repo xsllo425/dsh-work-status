@@ -217,6 +217,52 @@ test("失败：还没补上的挂着「未恢复」，已被后续成功接替�
   assert.match(fresh.text(), /boom/);
 });
 
+test("同一目标再失败一次：第二行改成「重试仍失败」，不叠两个标签", async () => {
+  const mount = await loadBadge();
+  const items = [
+    call("ops_bash", "node --test", "error", { err: "expected 8, got 7" }),
+    call("ops_bash", "node --test", "error", { err: "still 8" }),
+    call("read", "lib/client.js", "error", { err: "ENOENT" }),
+  ];
+  const view = mount(props({ items, counts: { steps: 3, tools: 3, errors: 3 } }));
+  view.click(byClass("dws-chip"));
+  const tags = collect(view.tree, (node) => node.props?.["data-kind"] === "pending").map((node) => textOf(node));
+  assert.equal(tags.filter((label) => label === "重试仍失败").length, 1, "同一目标第二行才是重试");
+  assert.equal(tags.filter((label) => label === "未恢复").length, 2, "第一次失败与另一个目标都还是未恢复");
+  assert.doesNotMatch(view.text(), /重试仍失败.*重试仍失败/);
+});
+
+test("末尾连着两步都失败：标题旁挂一句「连着没成」，只失败一次不挂", async () => {
+  const mount = await loadBadge();
+  const twice = mount(props({ items: [call("ops_bash", "npm test", "error", { err: "boom" }), call("ops_bash", "npm test", "error", { err: "boom" })], counts: { steps: 2, tools: 2, errors: 2 } }));
+  twice.click(byClass("dws-chip"));
+  const flags = collect(twice.tree, byClass("dws-head-flag"));
+  assert.equal(flags.length, 1);
+  assert.match(textOf(flags[0]), /连着没成/);
+
+  const once = mount(props({ items: [call("ops_bash", "npm test", "error", { err: "boom" })], counts: { steps: 1, tools: 1, errors: 1 } }));
+  once.click(byClass("dws-chip"));
+  assert.equal(collect(once.tree, byClass("dws-head-flag")).length, 0, "只失败一次不摆脸色");
+});
+
+test("这一步跑过 20 秒：行尾挂「有点久」，加上就慢的整轮也不催", async () => {
+  const mount = await loadBadge();
+  const slow = mount(props({ startedAt: NOW - 30000, stepSig: "ops_bash", stepStartAt: NOW - 25000, stepModelMs: 3000 }));
+  slow.click(byClass("dws-chip"));
+  const slowTags = collect(slow.tree, (node) => node.props?.["data-kind"] === "slow").map((node) => textOf(node));
+  assert.deepEqual(slowTags, ["有点久"]);
+
+  const quick = mount(props({ startedAt: NOW - 8000, stepSig: "ops_bash", stepStartAt: NOW - 5000, stepModelMs: 3000 }));
+  quick.click(byClass("dws-chip"));
+  assert.equal(collect(quick.tree, (node) => node.props?.["data-kind"] === "slow").length, 0);
+
+  const long = mount(props({ startedAt: NOW - 130000 }));
+  long.click(byClass("dws-chip"));
+  const flag = collect(long.tree, byClass("dws-head-flag"))[0];
+  assert.ok(flag, "整轮过了两分钟应有一句");
+  assert.match(textOf(flag), /本轮偏长/);
+});
+
 test("进度分三种模式：有 todo 是确定，没数据只说未知", async () => {
   const mount = await loadBadge();
   const todos = [

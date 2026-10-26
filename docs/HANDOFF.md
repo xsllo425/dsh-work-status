@@ -127,6 +127,7 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 - 宿主插槽容器带 `transform` 时，子元素 `position: fixed` 会相对该容器解析；面板定位因此按视口坐标手算
 - `ctx.jobs.read()` 是单消费者游标，读一次会顶掉模型的 `job_output` 与完成通知；本插件不调用
 - Windows 下进程被强制结束时 `finally` 不保证执行；依赖“结束事件”的推断需标注为推断
+- 会话日志没有流式增量事件：`assistant/message` 在模型这一步说完之后才整条落盘，工具参数增量只存在于该事件的 `data.stream` 里（`tool-call-chunks`，`args` 是分片数组、`dt` 是分片间隔），不是实时可见的
 
 ## 八、常见改动落点
 
@@ -149,6 +150,24 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 - 只在 Windows 桌面端验证；Web UI 与 macOS 未实测。
 - 桌宠入口依赖主题的 `.dsh-claude-deepy` / `.dsh-claude-crab` 类名，主题改名后会自动回退到「输入框上方的徽标」。
 - 真机排查方法：带 `--remote-debugging-port=9223 --remote-allow-origins=http://127.0.0.1:9223` 启动，用 CDP `Runtime.evaluate`；滚轮用 `Input.dispatchMouseEvent` 的 `mouseWheel`，先在对话区做对照。
+
+### 流式参数（第二条待办）：宿主侧拿不到，浏览器半边有一条没走过的路
+
+问题：能不能在工具参数还在生成时就把已经流出来的半截显示出来？
+
+**2026-10-27 补充（研究 dsh-task-mascot 之后，下面第 3 点已被修正为“还有一条路，未实测”）**：dsh-task-mascot 的浏览器半边并不走投影，而是直接 `ctx.sessions.binding(sid).eventSource`，`getSnapshot()` 取初始 entries、`subscribe()` 收实时追加，追加里的事件是 `assistant/live-chunk`，其 `data.chunk.type` 有 `tool-call-delta`（带 `id`/`name`/`argumentsDelta`）。它靠这个在参数还在生成时就把已闭合的字符串字段解析出来显示。本机 `app.asar` 里 `tool-call-delta`/`assistant/live-chunk` 字样都在（59/36 处），说明这一版宿主有这套事件。代价：本项目现在的架构是“宿主折叠 → 投影 → 卡片”，要在浏览器半边另开一条订阅，且只在 web UI 有这套 client driver，桌面壳要单独验证；不接的话，下面的结论仍然成立。
+
+验证方法：用 Python `zstandard.stream_reader` 解一份真实会话日志（14,476 行、2,094 步），统计事件类型与结构。
+
+查到的三件事：
+
+1. 事件表里没有增量类型。38 种事件里与工具相关的是 `tool/call`（2,158 条）与 `tool/result`（2,237 条），没有任何 delta、partial、streaming 类事件；`assistant/message` 的条数（2,094）与 `step/start` 相同，即一步一条，不是每块一条。
+2. 半截参数确实存在，但只作为历史留在一条已落盘的消息里：`assistant/message` 的 `data.stream` 有 `{"type":"tool-call-chunks","time0":…,"id":"call_…","name":"read","args":["…"],"dt":[…]}`，`args` 是分片数组、`dt` 是分片间隔。而这条消息的时间戳在模型说完之后（其 `stream` 里 `block-start` 比它早约 0.9 秒），紧跟着的 `tool/call` 的 `seq` 只比它大 1。
+3. 客户端拿不到实时通道：插槽组件只有 `useProjection`（`lib/client.js:2185`），它读的是宿主对已落盘日志的折叠，契约见本文第四节；插件 `inject` 里也只声明了 `slots` 与 `locale`。（例外见上方补充：`ctx.sessions.binding(sid).eventSource` 是一条能拿到 `tool-call-delta` 的路，本项目没有订阅。）
+
+结论：这一版接缝下拿不到“正在长出来的参数”。投影最早看到参数的时刻，参数已经完整，工具也已经开跑；把 `stream` 里的分片按 `dt` 回放属于补演历史（工具早执行完了），只会让界面落后于事实，不做。
+
+若将来要真做，需要宿主在投影里提供参数增量（或给客户端一个消费流式块的事件入口）。真到那天，解析层不用改：`lib/activity.js:154` 与 `:202-209` 对不完整 JSON 已经能降级成原始文本。
 
 ## 十、沟通约束记录
 

@@ -522,6 +522,23 @@ test("命令非零退出就是失败：宿主不给 error 标记，也要认出�
   assert.equal(read.items[0].status, "ok", "读文件读到这几个字不算命令失败");
 });
 
+test("退出码 1 只看命令：测试失败要红，git diff 有差异不算失败", () => {
+  const run = (command) => replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "ops_bash", arguments: JSON.stringify({ command }) }),
+    ev("tool/result", 2100, { turn: 1, step: 1, callId: "c1", message: { toolCallId: "c1", isError: false, content: [{ type: "text", text: "[exit code: 1]" }] } }),
+  ]);
+  const failing = run("node --test tests/*.test.mjs");
+  assert.equal(failing.items[0].status, "error", "测试挂了就是挂了");
+  assert.equal(failing.items[0].err, "退出码 1");
+
+  const diff = run("git diff --stat HEAD");
+  assert.equal(diff.items[0].status, "ok", "有差异不是失败");
+
+  const rg = run("rg -n TODO src");
+  assert.equal(rg.items[0].status, "ok", "没匹配不是失败");
+});
+
 test("老形态数据：data.isError / data.text 也要认", () => {
   const state = replay([
     ev("turn/start", 1000, { turn: 1 }),
