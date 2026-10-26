@@ -34,7 +34,7 @@
 export const ACTIVITY_KEY = "workStatus";
 export const activityProjection = {
   key: ACTIVITY_KEY,
-  stateVersion: 17,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
+  stateVersion: 18,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
   stateSchema: plainSchema,  // 宽松 schema
   init: () => EMPTY,
   apply: (state, event) => applyEvent(state, event),
@@ -51,17 +51,18 @@ export const activityProjection = {
 | 字段 | 内容 |
 | --- | --- |
 | `turn` / `phase` / `startedAt` / `updatedAt` | 轮次与阶段 |
-| `items` | 动作记录（`kind: "call"`、`name`、`target`、`status: running/ok/error`、`t0`、`t1`、`err`、`task`、`why`） |
+| `items` | 动作记录（`kind: "call"`、`name`、`target`、`key`、`status: running/ok/failed`、`t0`、`t1`、`err`、`task`、`why`）；`key` 用来判断“同工具同目标后来又成功” |
 | `counts` | `{ ops, steps, tools, errors, context }`（`steps` 只数非上下文维护的成功调用） |
 | `plan` / `todos` | 计划进度与清单 |
 | `stage` | `{ key, label, kind }`，由 todo `in_progress` 或消息短标题推得 |
 | `acp` | `{ blocks, status, ops }`，会话级账，`turn/start` 不清零 |
-| `stepStats` | 按「首个工具名」归档的步耗时样本（`model|sig`、`tool|cat|sig`，各最多 30 条） |
+| `stepStats` | 按步签名归档的耗时样本（`model|sig`、`tool|cat|sig`，各最多 30 条）；签名 = 工具名，命令类工具细分为 `ops_bash:test`、`ops_bash:git`、`ops_bash:script` 等 |
 | `modelMs` / `stepModelDone` | 本轮模型推理合计：每步 `step/start` → 该步 `assistant/message`（真实日志里每步恰好一条，在输出完成时落地）；`stepModelDone` 标记本步已记 |
 | `toolMs` / `toolOpen` / `toolSince` | 本轮工具占用合计：所有调用（含上下文维护）时间的并集，并行重叠只算一次；客户端对进行中的部分补到当前时刻 |
 | `decision*` / `stall` | 决策回合统计与低收益计数 |
 | `history` | 最近 24 轮（`HISTORY_TURNS`）逐轮记录：`turn`、`startedAt`、`endedAt`、`wallMs`、`rounds`（模型回合，= DSH 状态栏的“步”）、`steps`（成功工具调用）、`ops`、`errors`、`modelMs`、`toolMs`、`ctx`、`prompt`（截 80 字）、`phase`；ETA 也读它 |
 | `totals` | 会话从头累计：`turns`、`rounds`、`steps`、`ops`、`errors`、`ctx`、`ctxFailed`、`modelMs`、`toolMs`、`wallMs`、`firstAt`、`lastAt`（日志视图用） |
+| `turnCtx` | 本轮上下文维护总账：`n`（次数）、`saved`（省下的 token）、`fails`（失败数），不受显示窗口截断 |
 | `prev` | 上一轮快照：`turn`、`prompt`、起止、`steps`、`errors`、`modelMs`、`toolMs`、`items`、`ctx`（那一轮的上下文维护操作） |
 
 - `acp.ops` 是会话账（最多 16 条）；按轮显示一律用 `turnOps(state)`（完成时刻 ≥ `startedAt`），客户端同样过滤

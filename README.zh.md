@@ -117,6 +117,13 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 - [docs/RELEASE.md](docs/RELEASE.md) — 发布前检查清单
 - [CHANGELOG.md](CHANGELOG.md) — 逐版本记录
 
+## 边界
+
+- 显示的一切都来自会话事件流；工具结果没回来时，那一行写「结果未知」，不猜。
+- 数字都是**本会话**单轮或单步的；跨会话历史只存在本机，有上限，可随时删除（见下面「本地数据」）。
+- 桌宠联动是 best-effort：它盯的是 dsh-claude-style 的吉祥物，属于主题内部实现。主题一改就可能失效；给 \`<html data-dws-pet="off">\` 就能停掉联动，徽标会自动回来。
+- 只有计划有真实总数（n/m 待办）时才画百分比；没有就只报已用时间和「未知」，绝不编进度条。
+
 ## 许可
 
 MIT。部分代码派生自 [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0（MIT），见 [NOTICE](NOTICE)。

@@ -465,3 +465,17 @@ test("本轮上下文维护总账：次数、省下的量、失败数不受显�
   assert.equal(state.turnCtx.fails, 1);
   assert.equal(state.turnCtx.saved, 1000);
 });
+
+test("命令类工具按在干什么分开记：跑测试和 git 不共用同一个中位数", () => {
+  const run = (command) => replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("step/start", 1100, { turn: 1, step: 1 }),
+    ev("tool/call", 1200, { turn: 1, step: 1, callId: "c1", name: "ops_bash", arguments: JSON.stringify({ command }) }),
+    ev("tool/result", 2200, { turn: 1, step: 1, message: { toolCallId: "c1", isError: false } }),
+    ev("step/start", 2400, { turn: 1, step: 2 }),
+  ]);
+  const keysOf = (command) => Object.keys(run(command).stepStats).join(" ");
+  assert.match(keysOf("node --test tests/*.test.mjs"), /ops_bash:test/);
+  assert.match(keysOf("git status --short"), /ops_bash:git(?!-)/);
+  assert.match(keysOf("node scripts/release.mjs"), /ops_bash:script/);
+});

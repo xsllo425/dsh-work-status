@@ -117,6 +117,13 @@ The client never folds events; it renders the projection. When the projection's 
 - [docs/RELEASE.md](docs/RELEASE.md) — release pre-flight checklist
 - [CHANGELOG.md](CHANGELOG.md) — per-version notes
 
+## Limits
+
+- Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
+- Numbers are per turn or per step of the **current session**. Cross-session history is local only, capped, and can be deleted (see “Local data” below).
+- The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set \`<html data-dws-pet="off">\` to drop the hook — the status chip comes back automatically.
+- Percentages are only drawn when the plan has a real total (n/m todos). Otherwise you get elapsed time and “unknown”, never an invented bar.
+
 ## License
 
 MIT. Derived in part from [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0 (MIT); see [NOTICE](NOTICE).
