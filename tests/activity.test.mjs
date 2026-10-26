@@ -479,3 +479,19 @@ test("命令类工具按在干什么分开记：跑测试和 git 不共用同一
   assert.match(keysOf("git status --short"), /ops_bash:git(?!-)/);
   assert.match(keysOf("node scripts/release.mjs"), /ops_bash:script/);
 });
+
+test("一条命令串了好几步时，不把它算成“同类步”样本", () => {
+  const run = (command) => {
+    const events = [
+      ev("turn/start", 900, { turn: 1 }),
+      ev("step/start", 950, { turn: 1, step: 1 }),
+      ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "ops_bash", arguments: JSON.stringify({ command }) }),
+      ev("tool/result", 4100, { turn: 1, step: 1, message: { toolCallId: "c1", isError: false } }),
+      ev("assistant/message", 4150, { turn: 1, step: 1, message: { content: [{ type: "text", text: "跑完了" }] } }),
+      ev("step/start", 4200, { turn: 1, step: 2 }),
+    ];
+    return Object.keys(replay(events).stepStats);
+  };
+  assert.ok(run("node --test tests/x.test.mjs").some((key) => key.includes("ops_bash:test")));
+  assert.deepEqual(run("git add -A && git commit -m x"), []);
+});
