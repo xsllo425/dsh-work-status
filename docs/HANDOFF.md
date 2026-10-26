@@ -157,6 +157,8 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 
 **2026-10-27 补充（研究 dsh-task-mascot 之后，下面第 3 点已被修正为“还有一条路，未实测”）**：dsh-task-mascot 的浏览器半边并不走投影，而是直接 `ctx.sessions.binding(sid).eventSource`，`getSnapshot()` 取初始 entries、`subscribe()` 收实时追加，追加里的事件是 `assistant/live-chunk`，其 `data.chunk.type` 有 `tool-call-delta`（带 `id`/`name`/`argumentsDelta`）。它靠这个在参数还在生成时就把已闭合的字符串字段解析出来显示。本机 `app.asar` 里 `tool-call-delta`/`assistant/live-chunk` 字样都在（59/36 处），说明这一版宿主有这套事件。代价：本项目现在的架构是“宿主折叠 → 投影 → 卡片”，要在浏览器半边另开一条订阅，且只在 web UI 有这套 client driver，桌面壳要单独验证；不接的话，下面的结论仍然成立。
 
+**2026-10-27 已落地（0.9，P3）**：`lib/client.js` 里 `useStreamingCall(sid, sessions)` 订阅 `ctx.sessions.binding(sid).eventSource`，从 `assistant/live-chunk` 的 `tool-call-delta` 攒 `argumentsDelta`，用 `partialArgs()` 只取已闭合的字符串字段（`file_path`/`path`/`pattern`/`command`/`url`/`query`/`description`/`prompt`），取到名字+第一个目标才把它画成进行中那一行（「读文件 lib/client.js」），`tool/call` 或 `turn/end` 一到就交回时间轨。宿主不给 `sessions`、`binding` 抛错、快照读不到，都只是这块不显示，其它照旧。契约事实取自本机 `app.asar`：会话绑定对象带 `eventSource`（`dsh-api-session-controller` 的 `service.js:478`），增量帧由 `assistant-stream.js:41-51/114-124` 生成，`tool-call-delta` 的字段校验见 `dsh-llm/lib/types/assistant-stream.js:61-70`（`id` 必填字符串、`name` 可选、`argumentsDelta` 必填字符串）。注意：块级字段名是 `chunk`（`data.chunk`），会话侧也有把整条 `{type:'transient', event}` 叫 `entry` 的写法；订阅里到的是前者。
+
 验证方法：用 Python `zstandard.stream_reader` 解一份真实会话日志（14,476 行、2,094 步），统计事件类型与结构。
 
 查到的三件事：
@@ -165,7 +167,7 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 2. 半截参数确实存在，但只作为历史留在一条已落盘的消息里：`assistant/message` 的 `data.stream` 有 `{"type":"tool-call-chunks","time0":…,"id":"call_…","name":"read","args":["…"],"dt":[…]}`，`args` 是分片数组、`dt` 是分片间隔。而这条消息的时间戳在模型说完之后（其 `stream` 里 `block-start` 比它早约 0.9 秒），紧跟着的 `tool/call` 的 `seq` 只比它大 1。
 3. 客户端拿不到实时通道：插槽组件只有 `useProjection`（`lib/client.js:2185`），它读的是宿主对已落盘日志的折叠，契约见本文第四节；插件 `inject` 里也只声明了 `slots` 与 `locale`。（例外见上方补充：`ctx.sessions.binding(sid).eventSource` 是一条能拿到 `tool-call-delta` 的路，本项目没有订阅。）
 
-结论：这一版接缝下拿不到“正在长出来的参数”。投影最早看到参数的时刻，参数已经完整，工具也已经开跑；把 `stream` 里的分片按 `dt` 回放属于补演历史（工具早执行完了），只会让界面落后于事实，不做。
+结论：只看投影拿不到“正在长出来的参数”。投影最早看到参数的时刻，参数已经完整，工具也已经开跑；把 `stream` 里的分片按 `dt` 回放属于补演历史（工具早执行完了），只会让界面落后于事实，不做。（2026-10-27 更新：浏览器半边另开订阅的路已实现，见上方「已落地」；上面这条结论只对投影成立。）
 
 若将来要真做，需要宿主在投影里提供参数增量（或给客户端一个消费流式块的事件入口）。真到那天，解析层不用改：`lib/activity.js:154` 与 `:202-209` 对不完整 JSON 已经能降级成原始文本。
 

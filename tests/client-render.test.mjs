@@ -14,7 +14,7 @@ globalThis.clearInterval = () => {};
  * 这里给一个极小的替身：元素是普通对象，useState 会触发重渲染，effect 在渲染后执行，
  * 于是可以真的“点一下按钮”再读它渲染成了什么。
  */
-async function loadBadge() {
+async function loadBadge(options = {}) {
   delete globalThis.window;
   let config;
   let component;
@@ -64,6 +64,7 @@ async function loadBadge() {
   const ctx = {
     effect: (fn) => fn(),
     locale: { register: () => () => {} },
+    sessions: options.sessions,
     slots: {
       inject: (_slot, apply) => apply(),
       register: (_spec, render) => { component = render; return () => {}; },
@@ -261,6 +262,40 @@ test("这一步跑过 20 秒：行尾挂「有点久」，加上就慢的整轮�
   const flag = collect(long.tree, byClass("dws-head-flag"))[0];
   assert.ok(flag, "整轮过了两分钟应有一句");
   assert.match(textOf(flag), /本轮偏长/);
+});
+
+test("模型还在念参数时先说接下来做什么，参数没闭合就保持原样", async () => {
+  const events = [];
+  let change = { kind: "append", entries: [] };
+  const listeners = new Set();
+  const source = {
+    getSnapshot: () => ({ entries: events.slice(), change }),
+    subscribe: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+  const mount = await loadBadge({ sessions: { binding: () => ({ eventSource: source }) } });
+  const view = mount({ ...props(), sid: "s1" });
+  view.click(byClass("dws-chip"));
+  const nowRow = () => textOf(collect(view.tree, byClass("dws-item-now"))[0] ?? { props: {} });
+  assert.match(nowRow(), /模型思考中/);
+
+  const push = (event, kind = "append") => {
+    const entry = { type: "transient", event };
+    events.push(entry);
+    change = { kind, entries: [entry] };
+    for (const fn of listeners) fn();
+    view.rerender();
+  };
+  const delta = (raw) => push({ type: "assistant/live-chunk", data: { chunk: { type: "tool-call-delta", id: "c1", name: "read", argumentsDelta: raw } } });
+
+  delta('{"file_pa');
+  assert.match(nowRow(), /模型思考中/, "参数还没闭合时不能猜");
+
+  delta('th":"lib/client.js"}');
+  assert.match(nowRow(), /读文件/);
+  assert.match(nowRow(), /lib\/client\.js/);
+
+  push({ type: "tool/call", data: { callId: "c1", name: "read" } }, "replace");
+  assert.match(nowRow(), /模型思考中/, "调用真发生了就交回时间轨");
 });
 
 test("进度分三种模式：有 todo 是确定，没数据只说未知", async () => {
