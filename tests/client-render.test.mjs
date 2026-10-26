@@ -38,7 +38,11 @@ async function loadBadge() {
       if (changed) renderer.pending.push(fn);
       renderer.deps[i] = deps;
     },
-    useRef: (init) => (renderer.refs.push({ current: init }), renderer.refs[renderer.refs.length - 1]),
+    useRef: (init) => {
+      const i = renderer.refIndex++;
+      if (!(i in renderer.refs)) renderer.refs[i] = { current: init };
+      return renderer.refs[i];
+    },
   };
 
   const fakeRequire = (id) => {
@@ -70,10 +74,11 @@ async function loadBadge() {
   assert.equal(typeof component, "function");
 
   const mount = (props) => {
-    renderer = { index: 0, state: [], deps: {}, pending: [], refs: [], dirty: false };
+    renderer = { index: 0, effectIndex: 0, refIndex: 0, state: [], deps: {}, pending: [], refs: [], dirty: false };
     const run = () => {
       renderer.index = 0;
       renderer.effectIndex = 0;
+      renderer.refIndex = 0;
       renderer.pending = [];
       renderer.dirty = false;
       const tree = component(props);
@@ -83,6 +88,7 @@ async function loadBadge() {
     let tree = run();
     return {
       get tree() { return tree; },
+      rerender() { tree = run(); return tree; },
       click(predicate) {
         const button = collect(tree, (node) => node.props?.onClick && predicate(node))[0];
         assert.ok(button, "找不到可点击的元素");
@@ -275,6 +281,80 @@ test("最新三条常显，其余折进本轮历史，点开再收起", async ()
   assert.equal(collect(view.tree, byClass("dws-item")).filter((node) => node.props.className !== "dws-item dws-item-now").length, 5, "点开后应看到本轮全部记录");
   view.click(byClass("dws-history"));
   assert.equal(collect(view.tree, byClass("dws-item")).filter((node) => node.props.className !== "dws-item dws-item-now").length, 3, "再点应收回三条");
+});
+
+test("快的连招不会把整屏换掉：每行至少停 600ms，后来的排队等位", async () => {
+  const realNow = Date.now;
+  let clock = NOW;
+  Date.now = () => clock;
+  try {
+    const step = (id, target, doneAt) => call("read", target, "ok", { id, t0: doneAt - 120, t1: doneAt });
+    const items = [step("1", "alpha.js", NOW - 5000), step("2", "beta.js", NOW - 4000), step("3", "gamma.js", NOW - 3000)];
+    let state = activity({ items, counts: { steps: 3, tools: 3, errors: 0 } });
+    const mount = await loadBadge();
+    const view = mount({ useProjection: (name) => (name === "workStatus" ? state : []) });
+    view.click(byClass("dws-chip"));
+    const rows = () => collect(view.tree, byClass("dws-item"))
+      .filter((node) => node.props.className !== "dws-item dws-item-now")
+      .map((node) => textOf(node));
+    const first = rows();
+    assert.equal(first.length, 3);
+
+    const add = (id, target) => {
+      clock += 200;
+      items.push(step(id, target, clock));
+      state = activity({ items: [...items], counts: { steps: items.length, tools: items.length, errors: 0 } });
+      view.rerender();
+    };
+
+    add("4", "delta.js");
+    assert.deepEqual(rows(), first, "刚完成的一步先排队，屏上不该整片换掉");
+    add("5", "epsilon.js");
+    assert.deepEqual(rows(), first, "没停满 600ms 就还不换");
+
+    clock += 250;
+    view.rerender();
+    const swapped = rows();
+    assert.notDeepEqual(swapped, first, "停满 600ms 之后才让位");
+    assert.equal(swapped.length, 3);
+    assert.match(swapped[0], /delta/, "排队最久的先顶上，顺序不能乱");
+    assert.doesNotMatch(swapped.join(""), /alpha/, "停最久的那行让位");
+
+    clock += 600;
+    view.rerender();
+    const later = rows();
+    assert.match(later.join(""), /epsilon/, "排队的最后都看得到，不丢步");
+    assert.doesNotMatch(later.join(""), /beta/);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test("这一轮结束就不再排队：立刻落到最新几条", async () => {
+  const realNow = Date.now;
+  let clock = NOW;
+  Date.now = () => clock;
+  try {
+    const step = (id, target, doneAt) => call("read", target, "ok", { id, t0: doneAt - 120, t1: doneAt });
+    const items = [step("1", "alpha.js", NOW - 5000), step("2", "beta.js", NOW - 4000), step("3", "gamma.js", NOW - 3000)];
+    let state = activity({ items, counts: { steps: 3, tools: 3, errors: 0 } });
+    const mount = await loadBadge();
+    const view = mount({ useProjection: (name) => (name === "workStatus" ? state : []) });
+    view.click(byClass("dws-chip"));
+    clock += 200;
+    items.push(step("4", "delta.js", clock));
+    state = activity({ items: [...items], counts: { steps: 4, tools: 4, errors: 0 } });
+    view.rerender();
+
+    state = activity({ phase: "done", items: [...items], counts: { steps: 4, tools: 4, errors: 0 } });
+    view.rerender();
+    const text = textOf(view.tree);
+    assert.match(text, /delta/, "收尾时最新那步立刻可见，不等排队");
+    const rows = collect(view.tree, byClass("dws-item"));
+    assert.equal(rows.length, 4, "结束态常显四条");
+  } finally {
+    Date.now = realNow;
+  }
 });
 
 test("点 × 收起后本轮不再出现，下一轮重新出现", async () => {
