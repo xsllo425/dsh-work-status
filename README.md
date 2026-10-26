@@ -66,7 +66,7 @@
 | --- | --- |
 | 本地目录 | `install link:E:/path/to/dsh-work-status` |
 | 打包文件 | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
-| GitHub | `install github:xsllo425/dsh-work-status` |
+| GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>（插件内命令可简写为 `install github:xsllo425/dsh-work-status`） |
 
 桌面端也可以走 插件 → 添加插件，直接填仓库地址。
 

@@ -68,7 +68,7 @@ The package is a DeepSeek Harness bundle. Install it with the Plugin Manager:
 | --- | --- |
 | Local directory | `install link:E:/path/to/dsh-work-status` |
 | Packed tarball | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
-| GitHub | `install github:xsllo425/dsh-work-status` |
+| GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>(inside a DSH chat the shorthand `install github:xsllo425/dsh-work-status` works too) |
 
 In the desktop app, Plugin Manager → 添加插件 also accepts the repository URL directly.
 
