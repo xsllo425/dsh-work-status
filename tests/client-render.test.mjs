@@ -600,3 +600,26 @@ test("动作对象按目录职责与扩展名归类，认不出的仍写文件�
   odd.click(byClass("dws-chip"));
   assert.match(odd.text(), /weird-blob.bin/, "认不出的仍保留文件名，不编解释");
 });
+
+test("进行中这一步带同类参照：样本够就说区间，超了就说比 75% 久", async () => {
+  const mount = await loadBadge();
+  const base = {
+    phase: "thinking",
+    turn: 3,
+    startedAt: NOW - 60000,
+    stepStartAt: NOW - 1500,
+    stepSig: "",
+    stepStats: { "model|（无工具）": [3000, 3200, 3400, 3600, 3800] },
+  };
+  const normal = mount(props(activity(base)));
+  normal.click(byClass("dws-chip"));
+  assert.match(normal.text(), /同类通常/, "样本够 5 个就说区间");
+
+  const slow = mount(props(activity({ ...base, stepStartAt: NOW - 20000 })));
+  slow.click(byClass("dws-chip"));
+  assert.match(slow.text(), /比 75% 的同类更久/, "超过 p75 只说事实");
+
+  const thin = mount(props(activity({ ...base, stepStats: { "model|（无工具）": [3000, 3400] } })));
+  thin.click(byClass("dws-chip"));
+  assert.doesNotMatch(thin.text(), /同类通常/, "样本不足时不编区间");
+});
