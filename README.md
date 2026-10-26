@@ -89,6 +89,7 @@
 
 - DeepSeek Harness `>= 0.2.1-rc.2`，Web UI。
 - 可选：装了 [`dsh-claude-style`](https://github.com/Nwflower/dsh-claude-style) 并把桌宠放在输入框上方时，插件隐藏自己的徽标，改为**右键桌宠**打开面板。
+- 不含对方的美术资产：只读它的 CSS 类名（`.dsh-claude-deepy` / `.dsh-claude-crab`），不复制、不内联任何桌宠图片；螃蟹「Clawd」是 Anthropic 的角色，版权不在本项目。
 - 不绑定主题：颜色、描边、字体都取宿主 CSS 变量（`--dsw-alias-*`），浅色/深色/第三方主题自动跟随。
 
 ## 开发

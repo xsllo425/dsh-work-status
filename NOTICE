@@ -5,3 +5,12 @@ This project is derived in part from dsh-agent-activity 0.9.0
 (https://github.com/oxygenforce/dsh-agent-activity), licensed under the MIT License.
 Its copyright notice is retained in LICENSE and this file serves as the required
 attribution. The fork's own code lives under the same MIT terms.
+
+Third-party artwork
+
+This plugin ships no artwork from dsh-claude-style. It only reads that theme's
+CSS class names (`.dsh-claude-deepy`, `.dsh-claude-crab`) to hide its own chip
+and to react to a right-click on the mascot. The mascot images themselves —
+including the pixel crab "Clawd", a character of Anthropic — remain with their
+respective rights holders; see that repository's LICENSE for the exact terms.
+
