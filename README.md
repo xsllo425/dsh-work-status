@@ -120,6 +120,7 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 - [docs/RESEARCH-COMMUNITY.md](docs/RESEARCH-COMMUNITY.md) — 九个社区进度插件的对与错
 - [docs/STATS.md](docs/STATS.md) — 耗时显示背后的实测统计
 - [docs/RELEASE.md](docs/RELEASE.md) — 发布前检查清单
+- [docs/FINAL-CHECK.md](docs/FINAL-CHECK.md) — 交付前总检（范围级）
 - [CHANGELOG.md](CHANGELOG.md) — 逐版本记录
 
 想立刻清掉它：`npm run reset-stats`（先看路径可加 `-- --dry`）。
