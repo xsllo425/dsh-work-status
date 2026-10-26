@@ -623,3 +623,20 @@ test("进行中这一步带同类参照：样本够就说区间，超了就说�
   thin.click(byClass("dws-chip"));
   assert.doesNotMatch(thin.text(), /同类通常/, "样本不足时不编区间");
 });
+
+test("冷启动没有本会话样本时，用跨会话历史垫底并标明来源", async () => {
+  const mount = await loadBadge();
+  const carried = { "model|（无工具）": { n: 12, p25: 3000, med: 4200, p75: 6000 } };
+  const view = mount(props(activity({
+    phase: "thinking",
+    turn: 2,
+    stepStartAt: NOW - 1500,
+    stepSig: "",
+    stepStats: {},
+    carried,
+  })));
+  view.click(byClass("dws-chip"));
+  const text = view.text();
+  assert.match(text, /同类通常/, "有历史就给出区间");
+  assert.match(text, /据历史/, "并且要说清这段参照来自别的会话");
+});

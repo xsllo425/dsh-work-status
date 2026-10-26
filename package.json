@@ -1,6 +1,6 @@
 {
   "name": "dsh-work-status",
-  "version": "0.4.19",
+  "version": "0.5.0",
   "description": "DeepSeek Harness plugin: one compact row above the composer telling you what the agent is doing, what it finished, and whether anything is stuck. DSH 插件：用最少的注意力看清 agent 的工作状态。",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,9 @@
     "tests/client-render.test.mjs",
     "tests/semantics.test.mjs",
     "tests/decisions.test.mjs",
-    "tests/acp-shapes.test.mjs"
+    "tests/acp-shapes.test.mjs",
+    "lib/step-store.js",
+    "tests/step-store.test.mjs"
   ],
   "keywords": [
     "dsh-plugin",

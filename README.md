@@ -70,6 +70,17 @@ In the desktop app, Plugin Manager → 添加插件 also accepts the repository 
 - Uninstall removes the row; the plugin writes no session data of its own.
 - There is nothing to configure.
 
+## Local step statistics
+
+To show "usually 3–8s" on the very first turns of a new session, the plugin remembers how long each kind of step took in earlier sessions.
+
+- Location: `~/.dsh/work-status/step-stats.json` (Windows: `%USERPROFILE%/.dsh/work-status/step-stats.json`).
+- Contents: tool-class keys (`model|read`, `tool|local|edit`, …) and integer milliseconds. No paths, commands, prompts, session ids or timestamps.
+- Bounded: at most 30 samples per key and 48 keys; the file stays a few KB.
+- **Delete the file** at any time to go back to a cold start; the plugin recreates it on the next finished turn and never fails because of it.
+- Disable entirely with `DSH_WORK_STATUS_NO_HISTORY=1`.
+- Values from previous sessions are labelled `(from history)` in the panel; once the current session has 5 samples of the same kind, they take over silently.
+
 ## Compatibility
 
 - DeepSeek Harness `>= 0.2.1-rc.2`, Web UI.

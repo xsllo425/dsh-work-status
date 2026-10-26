@@ -24,6 +24,7 @@
 
 - 不调模型、不写提示词、不联网。
 - 不读会话日志文件；只消费宿主已经折好的会话投影（`sessionProjections`）。
+- 唯一会落盘的东西：`~/.dsh/work-status/step-stats.json`，只存「工具归类键 + 毫秒数」，不含路径/命令/提示词/会话 id；有上限（每类 30 个、最多 48 类），**随时可删**，删了等于冷启动；`DSH_WORK_STATUS_NO_HISTORY=1` 可彻底关闭。
 - 不做整轮 ETA：全量语料实测过（见 `docs/STATS.md`），长轮次基本是乱猜，所以只做「当前这一步 vs 同类步」的参照。
 - 不评价模型思考质量，不判定「停滞」以外的语义结论。
 
@@ -61,6 +62,7 @@ npm install dsh-work-status-0.4.18.tgz      # 在 profile 的 node_modules 里
 - 面板贴右边缘，会压住部分滚动条；要彻底解决得让面板可拖动或左移，属于版式改动，暂未做。
 - 只在 Windows + desktop profile + `dsh-claude-style` 主题下验证过；其它主题只保证「用宿主令牌、不写死颜色」。
 - 桌宠入口依赖 `dsh-claude-style` 的 `.dsh-claude-deepy/.dsh-claude-crab`，没有桌宠时自动退回标题栏徽标。
+- 跨会话参照在面板上标「据历史」，本会话样本够了会自动切换，这一步的切换肉眼可见。
 - 截图是用插件自己的 `STYLE_TEXT` 渲染的静态预览，不是真机截屏，字形/阴影会有细微差别。
 - `docs/RELEASE.md` 里的发布清单是草案，尚未实际推送 GitHub。
 
