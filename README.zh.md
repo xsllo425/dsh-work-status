@@ -117,6 +117,8 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 - [docs/RELEASE.md](docs/RELEASE.md) — 发布前检查清单
 - [CHANGELOG.md](CHANGELOG.md) — 逐版本记录
 
+想立刻清掉它：`npm run reset-stats`（先看路径可加 `-- --dry`）。
+
 ## 边界
 
 - 显示的一切都来自会话事件流；工具结果没回来时，那一行写「结果未知」，不猜。

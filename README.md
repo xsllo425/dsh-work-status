@@ -117,6 +117,8 @@ The client never folds events; it renders the projection. When the projection's 
 - [docs/RELEASE.md](docs/RELEASE.md) — release pre-flight checklist
 - [CHANGELOG.md](CHANGELOG.md) — per-version notes
 
+To wipe it: `npm run reset-stats` (add `-- --dry` to see the path first).
+
 ## Limits
 
 - Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
