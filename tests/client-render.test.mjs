@@ -298,7 +298,58 @@ test("模型还在念参数时先说接下来做什么，参数没闭合就保�
   assert.match(nowRow(), /模型思考中/, "调用真发生了就交回时间轨");
 });
 
-test("进度分三种模式：有 todo 是确定，没数据只说未知", async () => {
+test("模型已经在写正文时说「写回答」，只吐推理时还是「思考中」", async () => {
+  const events = [];
+  let change = { kind: "append", entries: [] };
+  const listeners = new Set();
+  const source = {
+    getSnapshot: () => ({ entries: events.slice(), change }),
+    subscribe: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+  const mount = await loadBadge({ sessions: { binding: () => ({ eventSource: source }) } });
+  const view = mount({ ...props(), sid: "s1" });
+  view.click(byClass("dws-chip"));
+  const nowRow = () => textOf(collect(view.tree, byClass("dws-item-now"))[0] ?? { props: {} });
+  const push = (event) => {
+    const entry = { type: "transient", event };
+    events.push(entry);
+    change = { kind: "append", entries: [entry] };
+    for (const fn of listeners) fn();
+    view.rerender();
+  };
+  const chunk = (type) => push({ type: "assistant/live-chunk", data: { chunk: { type, index: 0, text: "字" } } });
+
+  chunk("reasoning-delta");
+  assert.match(nowRow(), /模型思考中/, "只在推理时还是在思考");
+
+  chunk("text-delta");
+  assert.match(nowRow(), /写回答/, "开始出正文就该说在写回答");
+
+  push({ type: "tool/call", data: { callId: "c2", name: "edit" } });
+  assert.match(nowRow(), /模型思考中/, "正文收了、调用开始了，就交回时间轨");
+});
+
+test("时间轨固定 4 行：有没有「现在」那行，总行数都不变", async () => {
+  const mount = await loadBadge();
+  const count = (view) => collect(view.tree, byClass("dws-item")).length;
+
+  const thinking = mount(props());
+  thinking.click(byClass("dws-chip"));
+  assert.equal(count(thinking), 4, "思考中：三条历史 + 一行现在");
+  assert.equal(collect(thinking.tree, byClass("dws-item-now")).length, 1);
+
+  const runningRow = call("read", "lib/activity.js", "running", { id: "run-1", t0: NOW - 900, t1: 0 });
+  const running = mount(props({ items: [...FIVE_CALLS, runningRow] }));
+  running.click(byClass("dws-chip"));
+  assert.equal(count(running), 4, "工具在跑：四行历史，没有现在那行");
+  assert.equal(collect(running.tree, byClass("dws-item-now")).length, 0);
+
+  const done = mount(props({ phase: "done" }));
+  done.click(byClass("dws-chip"));
+  assert.equal(count(done), 4, "本轮结束：四行历史");
+});
+
+test("有 todo 才报进度，没清单就不画那行", async () => {
   const mount = await loadBadge();
   const todos = [
     { content: "读代码", status: "completed" },
@@ -315,11 +366,7 @@ test("进度分三种模式：有 todo 是确定，没数据只说未知", async
 
   const plain = mount(props());
   plain.click(byClass("dws-chip"));
-  const unknown = collect(plain.tree, byClass("dws-progress"));
-  assert.equal(unknown.length, 1);
-  assert.equal(unknown[0].props["data-mode"], "unknown");
-  assert.match(textOf(unknown[0]), /未知/);
-  assert.doesNotMatch(textOf(unknown[0]), /%/, "没有可靠数据时不能出现百分比");
+  assert.equal(collect(plain.tree, byClass("dws-progress")).length, 0, "没有清单就不画那行，不摆「未知」");
 });
 
 test("进行中的这一步只在时间轴上出现一次，不再单独占一行", async () => {
@@ -343,9 +390,7 @@ test("进行中的这一步只在时间轴上出现一次，不再单独占一�
 
   const waiting = mount(props(activity({ startedAt: NOW - 8000, stepSig: "", stepStartAt: 0 })));
   waiting.click(byClass("dws-chip"));
-  const bare = collect(waiting.tree, byClass("dws-progress"))[0];
-  assert.equal(bare.props["data-mode"], "unknown");
-  assert.doesNotMatch(textOf(bare), /%/, "没数据就不给百分比");
+  assert.equal(collect(waiting.tree, byClass("dws-progress")).length, 0, "没有清单就不画进度行");
 });
 
 test("最新三条常显，其余折进本轮历史，点开再收起", async () => {

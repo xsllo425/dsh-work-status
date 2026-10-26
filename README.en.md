@@ -99,7 +99,7 @@ To show "usually 3–8s" on the very first turns of a new session, the plugin re
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 86 tests, no dependencies
+node --test tests/*.test.mjs          # 97 tests, no dependencies
 node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
 ```
 
