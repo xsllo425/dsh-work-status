@@ -1,24 +1,24 @@
 # dsh-work-status
 
-**English** · [简体中文](./README.zh.md)
+**简体中文** · [English](./README.en.md)
 
-> One line tells you what the agent is doing; click once for the goal, the current step, the last few records and the previous turn.
+> 一行状态看清 Agent 在做什么；点开是目标、当前步、最近的记录与上一轮。
 
 [![ci](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![DeepSeek Harness plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe.svg)](https://github.com/topics/dsh-plugin)
 
-A [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin that answers one question with the least possible attention:
+一个 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 插件，用尽量少的注意力回答一个问题：
 
-> **What is the agent doing right now, what has it actually finished, and is anything stuck?**
+> **它现在在做什么、已经做完了什么、有没有卡住？**
 
-It renders a single compact row above the composer. Click it for the working state; click again to fold.
+默认只在输入框上方占一行，点开是工作状态，再点收起。
 
 ```
 ● 本轮 29 步                                            6m49s  ⌃
 ```
 
-Open it:
+点开之后：
 
 ```
 本轮 29 步                                              6m49s  ×
@@ -34,106 +34,104 @@ Open it:
                                    日志 · 复制 · 收起
 ```
 
-![panel, real screenshot](docs/screenshots/real-panel-redacted.png)
+![面板 · 浅色](docs/screenshots/panel-light.png)
 
-*Real screenshot; sidebar, session title and messages are blurred.*
+![面板 · 深色](docs/screenshots/panel-dark.png)
 
-![panel, dark](docs/screenshots/panel-dark.png)
+> 用插件自己的样式表和文案、套主题令牌渲染；运行中的应用是同一套结构，只是填真实数据。
 
-> Rendered from the plugin's own stylesheet and copy against the theme tokens; the running app draws the same markup with live data.
+## 显示什么
 
-## What it shows
+- **默认一行**：干活时显示当前动作与已用时，结束后显示本轮完成步数；不往对话区上浮任何卡片。
+- **目标与当前问题**：你提的要求、它正在处理的小问题，各自截断并可展开。
+- **三个分开的时钟**：模型推理、工具调用、上下文压缩各自计时，不合并成一个“已用时”；单步耗时按类别（本地 / 网络 / 后台）拆开，不是一笔糊账。
+- **只在有真实数据时给进度**：agent 维护 todo 清单时才显示百分比（`确定 3/4 · 75%`，并注明“按当前清单”）；没有清单就只说“未知 · 已耗时”，不对整轮外推 ETA。
+- **每个动作都说人话**：`跑测试`、`改文件`、`压缩上下文`，带目标与耗时。失败标 `未恢复` 或 `已恢复`（同一目标后来成功），能识别时直接给一句人话，不甩栈。
+- **上下文维护按普通记录排**：压缩 / 恢复 / 检索与工具行按时间排在一起，能看出它插在哪一步，又不虚增步数。
+- **上一轮**：上一轮折叠成一行放在分割线下，轮次结束后卡片仍能回答“刚做了什么”。
+- **会话日志**：轮次、步数、调用次数、每轮推理/工具用时、压缩次数与失败、最近 24 轮，可一键复制成纯文本。
 
-- **One line by default** — current step plus elapsed time while working; completed step count when idle. Nothing floats over the conversation.
-- **Goal and current problem** — the user's request and the sub-problem the agent is on, each clamped and expandable.
-- **Three separate clocks** — model reasoning, tool calls, context compression. They are never merged into one "elapsed" number, and per-step cost is broken down by category (local / network / background) instead of one opaque duration.
-- **Progress only when it is real** — a percentage exists only when the agent keeps a todo list (`确定 3/4 · 75%`, labelled *per current list*). Otherwise the card says *unknown · elapsed*; it never extrapolates a whole-turn ETA.
-- **Every action in plain words** — `跑测试`, `改文件`, `压缩上下文`, with target and duration. A failure is tagged *未恢复* or *已恢复* (a later success on the same target) and, when the error is recognisable, explained in one sentence instead of a stack trace.
-- **Context maintenance as normal rows** — compress / decompress / search appear inline with tool rows, so you see where they happened; they do not inflate step counts.
-- **Previous turn** — the last turn folds into one row under a divider, so the card still answers "what did it just do?" after a turn ends.
-- **Session log** — turns, steps, tool calls, per-turn reasoning/tool time, compression count and failures, last 24 turns, copyable as text.
+## 刻意不做的事
 
-## What it deliberately does not do
+- 不调模型、不注提示词、不发网络请求，数据不出本机。
+- 不还原“思考内容”，只报告可观察事件；事实与推断分开，不知道就写不知道。
+- 没有 todo 数据就不画进度条，不做 0% / 100% 的装饰。
+- 不评价 agent 想得对不对。
 
-- No model calls, no prompt injection, no network requests: nothing leaves the machine.
-- No "thinking" reconstruction — only observable events. Facts are separated from inference, and unknown stays unknown.
-- No 0% / 100% decoration: without todo data there is no bar.
-- No grading of the agent's reasoning.
+## 安装
 
-## Install
+插件是一个 DeepSeek Harness bundle，用插件管家安装：
 
-The package is a DeepSeek Harness bundle. Install it with the Plugin Manager:
-
-| Source | Command |
+| 来源 | 命令 |
 | --- | --- |
-| Local directory | `install link:E:/path/to/dsh-work-status` |
-| Packed tarball | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
+| 本地目录 | `install link:E:/path/to/dsh-work-status` |
+| 打包文件 | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
 | GitHub | `install github:xsllo425/dsh-work-status` |
 
-In the desktop app, Plugin Manager → 添加插件 also accepts the repository URL directly.
+桌面端也可以走 插件 → 添加插件，直接填仓库地址。
 
-- Host changes need a Harness restart; client-only changes reload with the page.
-- Uninstall removes the row; the plugin writes no session data of its own.
-- There is nothing to configure.
+- 改动宿主侧（`lib/activity.js`、`stateVersion`）需要重启 Harness；只改客户端会随页面刷新加载。
+- 卸载即移除这一行；插件不写自己的会话数据。
+- 没有需要配置的项。
 
-## Local step statistics
+## 本地步耗时统计
 
-To show "usually 3–8s" on the very first turns of a new session, the plugin remembers how long each kind of step took in earlier sessions.
+新会话的前几步想显示「同类通常 3–8 秒」，就得知道以前同类步用了多久，插件为此在本机记一份小统计。
 
-- Location: `~/.dsh/work-status/step-stats.json` (Windows: `%USERPROFILE%/.dsh/work-status/step-stats.json`).
-- Contents: tool-class keys (`model|read`, `tool|local|edit`, …) and integer milliseconds. No paths, commands, prompts, session ids or timestamps.
-- Bounded: at most 30 samples per key and 48 keys; the file stays a few KB.
-- **Delete the file** at any time to go back to a cold start; the plugin recreates it on the next finished turn and never fails because of it.
-- Disable entirely with `DSH_WORK_STATUS_NO_HISTORY=1`.
-- Values from previous sessions are labelled `(from history)` in the panel; once the current session has 5 samples of the same kind, they take over silently.
+- 位置：`~/.dsh/work-status/step-stats.json`（Windows：`%USERPROFILE%/.dsh/work-status/step-stats.json`）。
+- 内容：工具归类键（`model|read`、`tool|local|edit` 等）+ 整数毫秒。不含路径、命令、提示词、会话 id、时间戳。
+- 有上限：每类最多 30 个样本、最多 48 类，文件长期只有几 KB。
+- **随时可以直接删掉这个文件**，等于回到冷启动；下一轮结束后会自动重建，插件不会因此报错。
+- 想彻底关闭，设 `DSH_WORK_STATUS_NO_HISTORY=1`。
+- 来自历史会话的参照在面板上标「据历史」；本会话同类样本攒够 5 个后会自动改用本会话数据。
 
-## Compatibility
+## 兼容性
 
-- DeepSeek Harness `>= 0.2.1-rc.2`, Web UI.
-- Optional: when [`dsh-claude-style`](https://github.com/Nwflower/dsh-claude-style) renders a mascot above the composer, the plugin hides its own badge and opens on **right-click** of the mascot instead.
-- Theme-agnostic: colors, borders and fonts come from host CSS variables (`--dsw-alias-*`), so light/dark and custom themes work without plugin-specific styling.
+- DeepSeek Harness `>= 0.2.1-rc.2`，Web UI。
+- 可选：装了 [`dsh-claude-style`](https://github.com/Nwflower/dsh-claude-style) 并把桌宠放在输入框上方时，插件隐藏自己的徽标，改为**右键桌宠**打开面板。
+- 不绑定主题：颜色、描边、字体都取宿主 CSS 变量（`--dsw-alias-*`），浅色/深色/第三方主题自动跟随。
 
-## Development
+## 开发
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 84 tests, no dependencies
-node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
+node --test tests/*.test.mjs          # 84 项，无任何依赖
+node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、语言包
 ```
 
-There are no runtime or dev dependencies; tests run on plain Node 24.
+无运行时依赖，也无开发依赖，Node 24 直接跑。
 
 ```
-lib/index.js        host entry — registers the session projection
-lib/activity.js     pure event fold (stateVersion 16, key "workStatus")
-lib/client.js       web UI: chip, panel, timeline, log, dictionaries, CSS
-locale/*.json       plugin-list metadata (zh/en)
-icon.svg            plugin icon
-cordis.patch.yml    bundle patch row
-docs/               HANDOFF.md, RESEARCH-COMMUNITY.md, STATS.md
+lib/index.js        宿主入口，注册会话投影
+lib/activity.js     纯事件折叠（stateVersion 16，投影键 "workStatus"）
+lib/client.js       Web UI：徽标、面板、时间轨、日志、双语文案、样式
+locale/*.json       插件列表里的名称与简介（中/英）
+icon.svg            插件图标
+cordis.patch.yml    bundle 补丁行
+docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 ```
 
-The client never folds events; it renders the projection. When the projection's state shape changes, bump `stateVersion` — stale checkpoints are discarded and rebuilt from the log.
+客户端不折叠事件，只渲染投影。投影状态形状变化时必须递增 `stateVersion`——旧 checkpoint 会被丢弃，从日志重放。
 
-## Docs
+## 文档
 
-- [docs/HANDOFF.md](docs/HANDOFF.md) — developer handover: contracts, code map, test strategy, host quirks
-- [docs/RESEARCH-COMMUNITY.md](docs/RESEARCH-COMMUNITY.md) — what nine community progress plugins got right and wrong
-- [docs/STATS.md](docs/STATS.md) — measured statistics behind the timing display
-- [docs/RELEASE.md](docs/RELEASE.md) — release pre-flight checklist
-- [CHANGELOG.md](CHANGELOG.md) — per-version notes
+- [docs/HANDOFF.md](docs/HANDOFF.md) — 交接：投影契约、代码地图、测试策略、宿主怪癖
+- [docs/RESEARCH-COMMUNITY.md](docs/RESEARCH-COMMUNITY.md) — 九个社区进度插件的对与错
+- [docs/STATS.md](docs/STATS.md) — 耗时显示背后的实测统计
+- [docs/RELEASE.md](docs/RELEASE.md) — 发布前检查清单
+- [CHANGELOG.md](CHANGELOG.md) — 逐版本记录
 
-To wipe it: `npm run reset-stats` (add `-- --dry` to see the path first).
+想立刻清掉它：`npm run reset-stats`（先看路径可加 `-- --dry`）。
 
-A 7-slide intro deck: [docs/dsh-work-status-intro.pptx](docs/dsh-work-status-intro.pptx).
+介绍用的 7 页 PPT：[docs/dsh-work-status-intro.pptx](docs/dsh-work-status-intro.pptx)（封面、界面、口径、边界、安装）。
 
-## Limits
+## 边界
 
-- Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
-- Numbers are per turn or per step of the **current session**. Cross-session history is local only, capped, and can be deleted (see “Local data” below).
-- The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set \`<html data-dws-pet="off">\` to drop the hook — the status chip comes back automatically.
-- Percentages are only drawn when the plan has a real total (n/m todos). Otherwise you get elapsed time and “unknown”, never an invented bar.
+- 显示的一切都来自会话事件流；工具结果没回来时，那一行写「结果未知」，不猜。
+- 数字都是**本会话**单轮或单步的；跨会话历史只存在本机，有上限，可随时删除（见下面「本地数据」）。
+- 桌宠联动是 best-effort：它盯的是 dsh-claude-style 的吉祥物，属于主题内部实现。主题一改就可能失效；给 \`<html data-dws-pet="off">\` 就能停掉联动，徽标会自动回来。
+- 只有计划有真实总数（n/m 待办）时才画百分比；没有就只报已用时间和「未知」，绝不编进度条。
 
-## License
+## 许可
 
-MIT. Derived in part from [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0 (MIT); see [NOTICE](NOTICE).
+MIT。部分代码派生自 [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0（MIT），见 [NOTICE](NOTICE)。

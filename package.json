@@ -17,7 +17,7 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "README.zh.md",
+    "README.en.md",
     "LICENSE",
     "NOTICE",
     "scripts/*.mjs",

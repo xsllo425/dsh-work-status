@@ -79,7 +79,7 @@ npm install dsh-work-status-0.4.18.tgz      # 在 profile 的 node_modules 里
 
 | 文件 | 作用 |
 | --- | --- |
-| `README.md` / `README.zh.md` | 项目主说明（英/中），安装、用法、截图 |
+| `README.md` / `README.en.md` | 项目主说明（中/英），安装、用法、截图 |
 | `CHANGELOG.md` | 0.1.0 → 0.4.18 的完整改动记录 |
 | `docs/HANDOFF.md` | 接手开发用：投影契约、state 字段、代码地图、测试策略 |
 | `docs/STATS.md` | 统计口径与全量评测结论（为什么不做整轮 ETA） |
