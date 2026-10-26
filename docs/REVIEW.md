@@ -4,7 +4,7 @@
 
 - 仓库：`E:/DSH/dsh-work-status`（本地 git，已提交 0.4.18，**尚未推送**）
 - 版本：`0.4.18`，MIT，零运行时依赖
-- 测试：`node --test tests/*.test.mjs` → 68 项全过；`node scripts/check-manifest.mjs` → 通过
+- 测试：`node --test tests/*.test.mjs` → 69 项全过；`node scripts/check-manifest.mjs` → 通过
 - 截图：`docs/screenshots/panel-light.png`、`panel-dark.png`
 
 ## 一句话
@@ -85,4 +85,4 @@ npm install dsh-work-status-0.4.18.tgz      # 在 profile 的 node_modules 里
 | `docs/RELEASE.md` | 发布清单草案 |
 | `docs/VERIFICATION-0.4.10.md` | 一次改动级别的验证记录示例 |
 | `docs/screenshots/` | 浅色/深色面板截图 |
-| `tests/*.test.mjs` | 5 个套件，68 项 |
+| `tests/*.test.mjs` | 5 个套件，69 项 |
