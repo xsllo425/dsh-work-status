@@ -622,6 +622,40 @@ test("动作对象按目录职责与扩展名归类，认不出的仍写文件�
   assert.match(odd.text(), /weird-blob.bin/, "认不出的仍保留文件名，不编解释");
 });
 
+test("外部工具名里写着要干什么：认得全就念成人话，缺一个词仍留原名", async () => {
+  const mount = await loadBadge();
+  const items = [
+    call("mcp__github__fetch_issues", "登录页的问题", "ok", { id: "m1" }),
+    call("mcp__github__create_pull_request", "bump deps", "ok", { id: "m2" }),
+    call("mcp__filesystem__read_file", "lib/client.js", "ok", { id: "m3" }),
+    call("mcp__ghost__fetch_widget", "x", "ok", { id: "m4" }),
+  ];
+  const view = mount(props({ phase: "done", items, counts: { steps: 4, tools: 4, errors: 0 } }));
+  view.click(byClass("dws-chip"));
+  const verbs = collect(view.tree, byClass("verb")).map(textOf);
+  const targets = collect(view.tree, byClass("target")).map(textOf);
+  assert.deepEqual(verbs.slice(0, 3), ["读", "新建", "读"], "动词按词表念");
+  assert.deepEqual(targets.slice(0, 3), ["议题", "合并请求", "文件"], "对象按词表念");
+  assert.ok(verbs.includes("用外部工具"), "有词不认识就不硬翻");
+  assert.ok(targets.includes("fetch widget"), "退回原名，仍看得出调了什么");
+});
+
+test("英文界面同一套词表：动词名词都走字典，对象之间用空格", async () => {
+  const mount = await loadBadge();
+  const dictionary = {
+    "intent.mcp.read": "read", "mcp.noun.file": "files", "mcp.noun.content": "contents", "mcp.noun.issue": "issues",
+  };
+  const t = (key) => (Object.prototype.hasOwnProperty.call(dictionary, key) ? dictionary[key] : key);
+  const items = [
+    call("mcp__github__get_file_contents", "lib/client.js", "ok", { id: "e1" }),
+    call("mcp__github__fetch_issues", "登录页的问题", "ok", { id: "e2" }),
+  ];
+  const view = mount({ ...props({ phase: "done", items, counts: { steps: 2, tools: 2, errors: 0 } }), t });
+  view.click(byClass("dws-chip"));
+  const targets = collect(view.tree, byClass("target")).map(textOf);
+  assert.deepEqual(targets.slice(0, 2), ["files contents", "issues"], "英文词之间用空格连起来");
+});
+
 test("进行中这一步带同类参照：样本够就说区间，超了就说比 75% 久", async () => {
   const mount = await loadBadge();
   const base = {

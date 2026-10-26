@@ -1,3 +1,7 @@
+## 未发布
+
+- **外部工具名翻译成人话**：`mcp__github__fetch_issues` 以前一律显示「用外部工具 github/fetch issues」，现在按名字里的词读成「读 议题」；`create_pull_request` → 「新建 合并请求」、`get_file_contents` → 「读 文件内容」。词表只认确定的词，有一个词不认识就退回原名，绝不硬凑半句中文。动词和对象都走中英文字典，英文界面读作 “read issues”。（测试从 86 条加到 88 条）
+
 ## 0.8.1 — 2026-10-27
 
 - README 首屏换成动图 `docs/screenshots/panel-demo.gif`（6 帧，5.4 秒循环，230 KB）：进行中、失败、同一目标重试成功（旧行划掉转灰）、进度随清单推进——静态图看不出「状态会变」。
