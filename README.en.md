@@ -105,7 +105,7 @@ There are no runtime or dev dependencies; tests run on plain Node 24.
 
 ```
 lib/index.js        host entry — registers the session projection
-lib/activity.js     pure event fold (stateVersion 16, key "workStatus")
+lib/activity.js     pure event fold (stateVersion 18, key "workStatus")
 lib/client.js       web UI: chip, panel, timeline, log, dictionaries, CSS
 locale/*.json       plugin-list metadata (zh/en)
 icon.svg            plugin icon
@@ -131,7 +131,7 @@ A 7-slide intro deck: [docs/dsh-work-status-intro.pptx](docs/dsh-work-status-int
 
 - Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
 - Numbers are per turn or per step of the **current session**. Cross-session history is local only, capped, and can be deleted (see “Local data” below).
-- The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set \`<html data-dws-pet="off">\` to drop the hook — the status chip comes back automatically.
+- The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set `<html data-dws-pet="off">` to drop the hook — the status chip comes back automatically.
 - Percentages are only drawn when the plan has a real total (n/m todos). Otherwise you get elapsed time and “unknown”, never an invented bar.
 
 ## License
