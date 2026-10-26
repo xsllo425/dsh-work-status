@@ -1,5 +1,7 @@
 # dsh-work-status
 
+**English** · [简体中文](./README.zh.md)
+
 > One line tells you what the agent is doing; click once for the goal, the current step, the last few records and the previous turn.
 
 [![ci](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml)

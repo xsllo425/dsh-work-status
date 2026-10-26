@@ -1,5 +1,7 @@
 # dsh-work-status
 
+[English](./README.md) · **简体中文**
+
 > 一行状态看清 Agent 在做什么；点开是目标、当前步、最近的记录与上一轮。
 
 [![ci](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml)
