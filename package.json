@@ -23,6 +23,7 @@
     "scripts/*.mjs",
     "tests/*.test.mjs",
     "docs/screenshots/*.png",
+    "docs/screenshots/*.gif",
     "docs/HANDOFF.md",
     "docs/STATS.md",
     "docs/AUDIT.md"

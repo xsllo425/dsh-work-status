@@ -34,11 +34,13 @@ Open it:
                                    日志 · 复制 · 收起
 ```
 
+![panel demo: thinking → tests running → a test failing and left open → the same target retried and passing (the old row struck through and greyed out), with the progress bar moving](docs/screenshots/panel-demo.gif)
+
+*Animated: states change — running, failed, a failure redeemed by a later successful attempt (struck through and greyed out), and progress following the todo list. The panel follows the host locale, so this run is in Chinese.*
+
 ![panel, real screenshot](docs/screenshots/real-panel-redacted.png)
 
 *Real screenshot; sidebar, session title and messages are blurred.*
-
-![panel, dark](docs/screenshots/panel-dark.png)
 
 > Rendered from the plugin's own stylesheet and copy against the theme tokens; the running app draws the same markup with live data.
 

@@ -1,3 +1,8 @@
+## 未发布
+
+- README 首屏换成动图 `docs/screenshots/panel-demo.gif`（6 帧，5.4 秒循环，230 KB）：进行中、失败、同一目标重试成功（旧行划掉转灰）、进度随清单推进——静态图看不出「状态会变」。
+- 发布包 `files` 补上 `docs/screenshots/*.gif`，避免动图只存在于仓库、装到本地后 README 破图。
+
 ## 0.8.0 — 2026-10-27
 
 借鉴 dsh-task-mascot 的做法，修一条会“把失败显示成成功”的真问题：
