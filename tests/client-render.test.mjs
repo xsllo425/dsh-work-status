@@ -581,3 +581,22 @@ test("压缩失败后同类成功：失败那行划掉转灰，不再挂未恢�
   assert.doesNotMatch(text, /未恢复/, "有后续成功时不再挂未恢复");
   assert.doesNotMatch(text, /没压成：范围已失效/, "错误说明不再当正文");
 });
+
+test("动作对象按目录职责与扩展名归类，认不出的仍写文件名", async () => {
+  const mount = await loadBadge();
+  const items = [
+    call("read", "docs/guide.md", "ok"),
+    call("ops_bash", "node --test tests/unknown-thing.test.mjs", "ok"),
+    call("edit", "styles/theme.css", "ok"),
+  ];
+  const view = mount(props({ items, counts: { steps: 3, tools: 3, errors: 0 } }));
+  view.click(byClass("dws-chip"));
+  const text = view.text();
+  assert.match(text, /文档 guide/, "文档目录按职责归类");
+  assert.match(text, /跑测试s*unknown-thing/, "测试目录按职责归类（命令里只剩文件名也认得出，且不重复“测试”）");
+  assert.match(text, /样式 theme/, "样式目录按职责归类");
+
+  const odd = mount(props({ items: [call("read", "weird-blob.bin", "ok")], counts: { steps: 1, tools: 1, errors: 0 } }));
+  odd.click(byClass("dws-chip"));
+  assert.match(odd.text(), /weird-blob.bin/, "认不出的仍保留文件名，不编解释");
+});
