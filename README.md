@@ -2,7 +2,7 @@
 
 > One line tells you what the agent is doing; click once for the goal, the current step, the last few records and the previous turn.
 
-[![ci](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml)
+[![ci](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![DeepSeek Harness plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe.svg)](https://github.com/topics/dsh-plugin)
 
@@ -66,7 +66,7 @@ The package is a DeepSeek Harness bundle. Install it with the Plugin Manager:
 | --- | --- |
 | Local directory | `install link:E:/path/to/dsh-work-status` |
 | Packed tarball | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
-| GitHub | `install github:oxygenforce/dsh-work-status` |
+| GitHub | `install github:xsllo425/dsh-work-status` |
 
 In the desktop app, Plugin Manager → 添加插件 also accepts the repository URL directly.
 

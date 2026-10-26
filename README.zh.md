@@ -2,7 +2,7 @@
 
 > 一行状态看清 Agent 在做什么；点开是目标、当前步、最近的记录与上一轮。
 
-[![ci](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/oxygenforce/dsh-work-status/actions/workflows/ci.yml)
+[![ci](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml/badge.svg)](https://github.com/xsllo425/dsh-work-status/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![DeepSeek Harness plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe.svg)](https://github.com/topics/dsh-plugin)
 
@@ -64,7 +64,7 @@
 | --- | --- |
 | 本地目录 | `install link:E:/path/to/dsh-work-status` |
 | 打包文件 | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
-| GitHub | `install github:oxygenforce/dsh-work-status` |
+| GitHub | `install github:xsllo425/dsh-work-status` |
 
 桌面端也可以走 插件 → 添加插件，直接填仓库地址。
 

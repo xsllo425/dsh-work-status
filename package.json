@@ -56,13 +56,13 @@
       ]
     }
   },
-  "author": "oxygenforce",
+  "author": "xsllo425",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oxygenforce/dsh-work-status.git"
+    "url": "git+https://github.com/xsllo425/dsh-work-status.git"
   },
-  "homepage": "https://github.com/oxygenforce/dsh-work-status#readme",
+  "homepage": "https://github.com/xsllo425/dsh-work-status#readme",
   "bugs": {
-    "url": "https://github.com/oxygenforce/dsh-work-status/issues"
+    "url": "https://github.com/xsllo425/dsh-work-status/issues"
   }
 }
