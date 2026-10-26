@@ -495,3 +495,38 @@ test("一条命令串了好几步时，不把它算成“同类步”样本", ()
   assert.ok(run("node --test tests/x.test.mjs").some((key) => key.includes("ops_bash:test")));
   assert.deepEqual(run("git add -A && git commit -m x"), []);
 });
+
+test("命令非零退出就是失败：宿主不给 error 标记，也要认出来", () => {
+  const NL = String.fromCharCode(10);
+  const run = (command, text) => replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "ops_bash", arguments: JSON.stringify({ command }) }),
+    ev("tool/result", 2100, { turn: 1, step: 1, callId: "c1", message: { toolCallId: "c1", isError: false, content: [{ type: "text", text }] } }),
+  ]);
+  const bad = run("node scripts/build.mjs", ["boom", "", "[exit code: 2]"].join(NL));
+  assert.equal(bad.items[0].status, "error");
+  assert.equal(bad.items[0].err, "退出码 2");
+  assert.equal(bad.counts.errors, 1);
+
+  const grep = run("grep -n TODO src/app.js", "[exit code: 1]");
+  assert.equal(grep.items[0].status, "ok", "没有匹配不是失败");
+
+  const chained = run("make || true", ["fail", "[exit code: 1]", "ok", "[exit code: 0]"].join(NL));
+  assert.equal(chained.items[0].status, "ok", "只看最后一条");
+
+  const read = replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c1", name: "read", arguments: JSON.stringify({ path: "x.md" }) }),
+    ev("tool/result", 2100, { turn: 1, step: 1, callId: "c1", message: { toolCallId: "c1", isError: false, content: [{ type: "text", text: "[exit code: 2]" }] } }),
+  ]);
+  assert.equal(read.items[0].status, "ok", "读文件读到这几个字不算命令失败");
+});
+
+test("老形态数据：data.isError / data.text 也要认", () => {
+  const state = replay([
+    ev("turn/start", 1000, { turn: 1 }),
+    ev("tool/call", 1100, { turn: 1, step: 1, callId: "c9", name: "write", arguments: JSON.stringify({ path: "a.txt" }) }),
+    ev("tool/result", 2100, { turn: 1, step: 1, callId: "c9", isError: true, text: "disk full" }),
+  ]);
+  assert.equal(state.items[0].status, "error");
+});

@@ -1,3 +1,13 @@
+## 0.8.0 — 2026-10-27
+
+借鉴 dsh-task-mascot 的做法，修一条会“把失败显示成成功”的真问题：
+
+- **命令非零退出算失败**：DSH 的 `ops_bash` / `pwsh` 等在结果末尾写 `[exit code: N]`，但宿主不会把它标成 `isError`。本机日志里 1,214 条命令结果带退出码、其中非零的全部是 `isError: false`，也就是说旧版一律当成成功。现在按最后一条退出码判定，失败行写「退出码 N」。
+- 例外两类不算失败：退出码 1 且命令是 grep/rg/findstr/diff/ag/ack/git diff（没匹配/有差异是正常结果）；命令链前面失败、最后一条成功，整体算成功。
+- 兼容两种结果形态：`message.content` 与更老的 `data.text` / `data.isError`。
+
+测试 86 项（新增 2 条：非零退出、老形态数据）。
+
 ## 0.7.0 — 2026-10-26
 
 - 新增 `npm run reset-stats`：一条命令清掉本机的步耗时记忆（`~/.dsh/work-status/step-stats.json`），先看路径可加 `-- --dry`；删除后插件冷启动重新积累，不报错。
