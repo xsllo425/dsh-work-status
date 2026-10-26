@@ -80,7 +80,7 @@ In the desktop app, Plugin Manager → 添加插件 also accepts the repository 
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 65 tests, no dependencies
+node --test tests/*.test.mjs          # 68 tests, no dependencies
 node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
 ```
 
