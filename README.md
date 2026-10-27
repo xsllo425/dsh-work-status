@@ -81,7 +81,7 @@
 
 | 装法 | 更新 |
 | --- | --- |
-| GitHub | 带版本号重装一次：`dsh plugin --profile web add github:xsllo425/dsh-work-status#v0.9.0`（把 `v0.9.0` 换成想装的版本；写 `#main` 就是跟最新） |
+| GitHub | 重跑安装命令就是更新：`dsh plugin --profile web add github:xsllo425/dsh-work-status`。想固定在某个版本，在仓库地址后面加 tag（形如 `#v0.9.1`，版本号见 Releases 页） |
 | 本地目录 | 在那个目录 `git pull`；用 `link:` 装的话改完重启就生效 |
 | 打包文件 | 重新 `npm pack`，再按 `file:` 装一遍 |
 

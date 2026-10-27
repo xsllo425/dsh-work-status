@@ -84,7 +84,7 @@ The plugin never touches the network and cannot update itself; how you installed
 
 | Installed as | Update |
 | --- | --- |
-| GitHub | Reinstall with a version: `dsh plugin --profile web add github:xsllo425/dsh-work-status#v0.9.0` (swap `v0.9.0` for the version you want; `#main` tracks the tip) |
+| GitHub | Re-running the install command updates it: `dsh plugin --profile web add github:xsllo425/dsh-work-status`. To pin a version, add a tag to the repository URL (like `#v0.9.1`; tags are listed on the Releases page) |
 | Local directory | `git pull` in that directory; with `link:` a restart picks it up |
 | Packed tarball | `npm pack` again, then install the `file:` once more |
 
