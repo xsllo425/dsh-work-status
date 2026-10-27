@@ -1154,7 +1154,7 @@ test("切会话重新挂载：吉祥物已在页面上，首帧就不画徽标�
 
 test("主题在但吉祥物还没画出来：先不画徽标，等宽限期", async () => {
   const mount = await loadBadge();
-  globalThis.document.body = { hasAttribute: (name) => name === "data-dsh-claude-style" };
+  globalThis.document.querySelector = (selector) => (selector === "body[data-dsh-claude-style]" ? {} : null);
   const view = mount(props({ phase: "done" }));
   assert.equal(collect(view.tree, byClass("dws-chip")).length, 0);
 });
