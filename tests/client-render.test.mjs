@@ -1088,3 +1088,59 @@ test("工具失败后同一目标再成功：前面那次划掉转灰；换个�
   assert.equal(collect(other.tree, byClass("dws-item")).filter((item) => item.props["data-settled"] === "true").length, 0);
   assert.match(other.text(), /未恢复/);
 });
+
+test("同一处动到第六次才说「第 6 次」：反复五次以内不啰嗦", async () => {
+  const mount = await loadBadge();
+  const nthTags = (view) => collect(view.tree, (node) => node.props?.["data-kind"] === "nth").map(textOf);
+  const edits = (count) => Array.from({ length: count }, (_value, index) =>
+    call("edit", "lib/client.js", "ok", { id: "edit-" + index, t0: NOW - 30000 + index * 1000, t1: NOW - 29000 + index * 1000 }));
+
+  const six = mount(props({ phase: "done", items: edits(6), counts: { steps: 6, tools: 6, errors: 0 } }));
+  six.click(byClass("dws-chip"));
+  assert.deepEqual(nthTags(six), ["第 6 次"], "最新那次是第六次，标一次就够");
+
+  const five = mount(props({ phase: "done", items: edits(5), counts: { steps: 5, tools: 5, errors: 0 } }));
+  five.click(byClass("dws-chip"));
+  assert.deepEqual(nthTags(five), [], "五次以内是正常迭代，不贴标签");
+});
+
+test("失败散着也不会漏掉：一轮里累计三次就在标题旁报数", async () => {
+  const mount = await loadBadge();
+  const headFlags = (view) => collect(view.tree, byClass("dws-head-flag")).map(textOf);
+  const spread = [
+    call("ops_bash", "npm test", "error", { id: "f1", err: "boom" }),
+    call("read", "lib/a.js", "ok", { id: "k1" }),
+    call("ops_bash", "npm run lint", "error", { id: "f2", err: "boom" }),
+    call("read", "lib/b.js", "ok", { id: "k2" }),
+    call("ops_bash", "npm run build", "error", { id: "f3", err: "boom" }),
+  ];
+  const three = mount(props({ items: spread, counts: { steps: 5, tools: 5, errors: 3 } }));
+  three.click(byClass("dws-chip"));
+  assert.equal(headFlags(three).length, 1);
+  assert.match(headFlags(three)[0], /失败 3 次/, "没有连着失败也要报总数");
+
+  const two = mount(props({ items: spread.slice(0, 2), counts: { steps: 2, tools: 2, errors: 1 } }));
+  two.click(byClass("dws-chip"));
+  assert.deepEqual(headFlags(two), [], "一两次失败不值得摆脸色");
+});
+
+test("这一轮结束时补一句：失败几次、同一处反复了几次", async () => {
+  const mount = await loadBadge();
+  const edits = Array.from({ length: 6 }, (_value, index) =>
+    call("edit", "lib/client.js", "ok", { id: "edit-" + index, t0: NOW - 30000 + index * 1000, t1: NOW - 29000 + index * 1000 }));
+  const fails = [
+    call("ops_bash", "npm test", "error", { id: "f1", err: "boom" }),
+    call("ops_bash", "npm run lint", "error", { id: "f2", err: "boom" }),
+    call("ops_bash", "npm run build", "error", { id: "f3", err: "boom" }),
+  ];
+  const done = mount(props({ phase: "done", items: [...edits, ...fails], counts: { steps: 9, tools: 9, errors: 3 } }));
+  done.click(byClass("dws-chip"));
+  const sum = collect(done.tree, byClass("dws-sum"));
+  assert.equal(sum.length, 1, "收尾只留一句");
+  assert.match(textOf(sum[0]), /失败 3 次/);
+  assert.match(textOf(sum[0]), /同一处 6 次/);
+
+  const running = mount(props({ items: [...edits, ...fails], counts: { steps: 9, tools: 9, errors: 3 } }));
+  running.click(byClass("dws-chip"));
+  assert.equal(collect(running.tree, byClass("dws-sum")).length, 0, "还在跑就先别下结论");
+});
