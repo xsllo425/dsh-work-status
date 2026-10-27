@@ -76,7 +76,7 @@ check(/conversation\.input\.dock/.test(client), "client.js must target the input
 
 const host = readFileSync(join(root, "lib", "index.js"), "utf8");
 check(/export function apply\(/.test(host), "host half must export an apply function");
-check(/export const inject = \["sessionProjections"\]/.test(host), "host half must inject sessionProjections");
+check(/export const inject = \[[^\]]*"sessionProjections"/.test(host), "host half must inject sessionProjections");
 check(!/export default/.test(host), "host half must not mix export forms");
 
 // 文档跟着代码走：README 写的数字和命令、CHANGELOG 的版本头，不能靠人记得改。

@@ -8,6 +8,9 @@ const file = path.join(import.meta.dirname, "..", "lib", "client.js");
 // 组件里的 useNow 会开一秒一次的定时器，测试不需要它打转。
 globalThis.setInterval = () => 0;
 globalThis.clearInterval = () => {};
+// 下载轮询也是定时器：首帧那一次 tick 同步就跑完了，后面的重排不要留下活句柄。
+globalThis.setTimeout = () => 0;
+globalThis.clearTimeout = () => {};
 
 /**
  * 客户端只有 `window.__ModuleLoader__` 这一个入口，React 由宿主注入。
@@ -50,7 +53,10 @@ async function loadBadge(options = {}) {
     throw new Error(`unexpected require: ${id}`);
   };
 
-  globalThis.window = { __ModuleLoader__: { load: (value) => { config = value; } } };
+  globalThis.window = {
+    ...(options.fetch ? { fetch: options.fetch } : {}),
+    __ModuleLoader__: { load: (value) => { config = value; } },
+  };
   globalThis.document = {
     getElementById: () => null,
     querySelector: () => null,
@@ -98,6 +104,17 @@ async function loadBadge(options = {}) {
         return tree;
       },
       text() { return textOf(tree); },
+      /**
+       * 走一遍当前这棵树，先把 hook 计数归零：textOf/collect 会把函数组件再跑一次，
+       * 不归零的话状态槽位会一路错开，读到别人的 useState。
+       */
+      walk(fn) {
+        renderer.index = 0;
+        renderer.effectIndex = 0;
+        renderer.refIndex = 0;
+        renderer.pending = [];
+        return fn(tree);
+      },
     };
   };
   return mount;
@@ -1163,4 +1180,237 @@ test("没有主题也没有吉祥物：照旧马上画徽标", async () => {
   const mount = await loadBadge();
   const view = mount(props({ phase: "done" }));
   assert.equal(collect(view.tree, byClass("dws-chip")).length, 1);
+});
+
+// ── 下载进度 ─────────────────────────────────────────────────────────────────
+
+/** 一帧里的异步 tick 走完：fetch 的 promise 链至少两个微任务。 */
+async function flushMicrotasks(times = 5) {
+  for (let i = 0; i < times; i += 1) await Promise.resolve();
+}
+
+function fakeFetch(payload) {
+  const calls = [];
+  const impl = async (url) => {
+    calls.push(url);
+    return { ok: true, json: async () => payload };
+  };
+  impl.calls = calls;
+  return impl;
+}
+
+test("下载区读的是本插件的只读接口，有任务才出现在面板里", async () => {
+  const fetchImpl = fakeFetch({ jobs: [] });
+  const mount = await loadBadge({ fetch: fetchImpl });
+  const view = mount(props());
+  await flushMicrotasks();
+  view.rerender();
+  view.click(byClass("dws-chip"));
+  assert.deepEqual(fetchImpl.calls, ["/api/dsh-work-status/downloads"], "打的必须是插件自己的接口");
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 0, "没有任务时不留一块空白");
+
+  const running = fakeFetch({
+    jobs: [{ id: "d1", status: "running", phase: "downloading", totalBytes: 10000000, receivedBytes: 2500000, speedBps: 2500000, filename: "model.gguf" }],
+  });
+  const mount2 = await loadBadge({ fetch: running });
+  const view2 = mount2(props());
+  await flushMicrotasks();
+  view2.rerender();
+  view2.click(byClass("dws-chip"));
+  const rows = collect(view2.tree, byClass("dws-dl"));
+  assert.equal(rows.length, 1);
+  const text = textOf(rows[0]);
+  assert.match(text, /下载/);
+  assert.match(text, /model\.gguf/);
+  assert.match(text, /25%/);
+  assert.match(text, /2\.4 MB\/s/);
+  assert.match(text, /剩/, "有速度就该给剩余时间");
+});
+
+test("下载进程没了却还写着下载中：标成中断，不假装在跑", async () => {
+  const fetchImpl = fakeFetch({
+    jobs: [{ id: "d2", status: "running", phase: "downloading", totalBytes: 100, receivedBytes: 40, speedBps: 0, filename: "a.bin", stale: true }],
+  });
+  const mount = await loadBadge({ fetch: fetchImpl });
+  const view = mount(props());
+  await flushMicrotasks();
+  view.rerender();
+  view.click(byClass("dws-chip"));
+  const row = collect(view.tree, byClass("dws-dl"))[0];
+  assert.equal(row.props["data-status"], "error");
+  assert.match(textOf(row), /中断/);
+});
+
+test("下载区最多列四条：卡片是概览，不是下载管理器", async () => {
+  const jobs = Array.from({ length: 8 }, (_v, i) => ({ id: "j" + i, status: "done", phase: "done", filename: "f" + i + ".bin", totalBytes: 10, receivedBytes: 10 }));
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs }) });
+  const view = mount(props());
+  await flushMicrotasks();
+  view.rerender();
+  view.click(byClass("dws-chip"));
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 4);
+});
+
+test("接口挂了就安静：不崩、不画下载区", async () => {
+  const mount = await loadBadge({ fetch: async () => { throw new Error("offline"); } });
+  const view = mount(props());
+  await flushMicrotasks();
+  view.rerender();
+  view.click(byClass("dws-chip"));
+  assert.equal(collect(view.tree, byClass("dws-panel")).length, 1, "主卡片照常");
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 0);
+});
+
+// ── 下载进度：收起态与轮次结束后 ─────────────────────────────────────────────
+
+const RUNNING_JOB = {
+  id: "d9", status: "running", phase: "downloading",
+  totalBytes: 10000000, receivedBytes: 4000000, speedBps: 2000000, filename: "big.bin",
+};
+
+test("面板收起、下载还在跑：徽标旁留一条常驻进度，不跟着消失", async () => {
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [RUNNING_JOB] }) });
+  const view = mount(props());
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(collect(view.tree, byClass("dws-panel")).length, 0, "面板是收起的");
+  const strip = collect(view.tree, byClass("dws-strip"));
+  assert.equal(strip.length, 1, "收起时也要看得见下载");
+  const row = collect(strip[0], byClass("dws-dl"));
+  assert.equal(row.length, 1);
+  assert.match(textOf(row[0]), /big\.bin/);
+  assert.match(textOf(row[0]), /40%/);
+});
+
+test("轮次已经结束、下载还在跑：卡片不整个消失，下载行留着", async () => {
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [RUNNING_JOB] }) });
+  const view = mount(props({ phase: "done" }));
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(collect(view.tree, byClass("dws-chip")).length, 1, "结束的这轮照样有徽标");
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 1, "下载还活着就不能一起藏起来");
+});
+
+test("下载跑完了、面板收着：常驻条自动收起，不留一条没用的空条", async () => {
+  const done = { ...RUNNING_JOB, status: "done", phase: "done", receivedBytes: 10000000, speedBps: 0 };
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [done] }) });
+  const view = mount(props({ phase: "done" }));
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(collect(view.tree, byClass("dws-strip")).length, 0);
+});
+
+test("完全没有下载任务又不在跑：一律不画（不装下载功能的人看不到变化）", async () => {
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [] }) });
+  const view = mount(props({ phase: "done" }));
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(collect(view.tree, byClass("dws-strip")).length, 0);
+  assert.equal(collect(view.tree, byClass("dws-panel")).length, 0);
+});
+
+// ── 术语解释 ─────────────────────────────────────────────────────────────────
+
+/** 打开面板、展开第一行，回读那行下面的大白话（没展开时这里应当是空的）。 */
+async function glossAfterOpen(item) {
+  const mount = await loadBadge();
+  const view = mount(props({ items: [item] }));
+  view.click(byClass("dws-chip"));
+  assert.equal(view.walk((tree) => collect(tree, byClass("dws-gloss")).length), 0, "行没展开就不占地方");
+  const rows = view.walk((tree) => collect(tree, (node) => node.props?.["data-open"] !== undefined && node.props?.onClick));
+  assert.ok(rows.length > 0, "找不到可展开的行");
+  rows[0].props.onClick();
+  view.rerender();
+  return view.walk((tree) => collect(tree, byClass("dws-gloss")).map(textOf));
+}
+
+test("点开一步能看到那句大白话；解释跟着动作走，不是同一句", async () => {
+  const gloss = await glossAfterOpen(call("ops_bash", "node --test tests/x.test.mjs", "ok"));
+  assert.equal(gloss.length, 1);
+  assert.match(gloss[0], /自动检查/, "跑测试要解释成「验证改动没弄坏别的」");
+
+  const other = await glossAfterOpen(call("ops_bash", "git diff --stat", "ok"));
+  assert.equal(other.length, 1);
+  assert.notEqual(other[0], gloss[0], "不同动作给不同解释");
+});
+test("认不出的工具不给假解释：没有词条就不加那一行", async () => {
+  const mount = await loadBadge();
+  const view = mount(props({ items: [call("mystery_tool_xyz", "something", "ok")] }));
+  view.click(byClass("dws-chip"));
+  const rows = view.walk((tree) => collect(tree, (node) => node.props?.["data-open"] !== undefined && node.props?.onClick));
+  rows[0].props.onClick();
+  view.rerender();
+  assert.equal(view.walk((tree) => collect(tree, byClass("dws-gloss")).length), 0);
+});
+
+// ── 回归：进行中的行不许沉下去，下载条不许闪没 ───────────────────────────────
+
+test("进行中的那一步当场出现在最上面：不跟刚跑完的行一起排队", async () => {
+  const realNow = Date.now;
+  let clock = NOW;
+  Date.now = () => clock;
+  try {
+    const step = (id, target, doneAt) => call("read", target, "ok", { id, t0: doneAt - 120, t1: doneAt });
+    const items = [
+      step("1", "alpha.js", NOW - 5000),
+      step("2", "beta.js", NOW - 4000),
+      step("3", "gamma.js", NOW - 3000),
+      step("4", "delta.js", NOW - 2000),
+      step("5", "epsilon.js", NOW - 1000),
+    ];
+    let state = activity({ items, counts: { steps: 5, tools: 5, errors: 0 } });
+    const mount = await loadBadge();
+    const view = mount({ useProjection: (name) => (name === "workStatus" ? state : []) });
+    view.click(byClass("dws-chip"));
+    const rows = () => collect(view.tree, byClass("dws-item"))
+      .filter((node) => node.props.className !== "dws-item dws-item-now")
+      .map((node) => textOf(node));
+    const before = rows();
+    assert.equal(before.length, 3, "没有工具在跑时，那格留给“模型在想什么”");
+
+    // 一个还在跑的动作进场，同一瞬间还有一个刚跑完的普通步。
+    clock += 200;
+    items.push(call("ops_bash", "npm test", "running", { id: "run-1", t0: clock, t1: 0 }));
+    items.push(step("6", "zeta.js", clock));
+    state = activity({ items: [...items], counts: { steps: 7, tools: 7, errors: 0 } });
+    view.rerender();
+
+    const now = rows();
+    assert.equal(now.length, 4, "有工具在跑：四行历史，卡片不许撑高");
+    assert.match(now[0], /跑测试/, "正在跑的那步必须当场在最上面，不许被排队藏到下面");
+    assert.doesNotMatch(now.join(""), /zeta/, "刚跑完的普通步该排队让位，不能抢");
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test("轮询一时失败：已经在跑的下载条不许清空闪没", async () => {
+  const pending = [];
+  const realSetTimeout = globalThis.setTimeout;
+  let fail = false;
+  const flaky = async () => {
+    if (fail) throw new Error("offline");
+    return { ok: true, json: async () => ({ jobs: [RUNNING_JOB] }) };
+  };
+  globalThis.setTimeout = (fn) => { pending.push(fn); return 0; };
+  try {
+    const mount = await loadBadge({ fetch: flaky });
+    const view = mount(props());
+    await flushMicrotasks();
+    view.rerender();
+    assert.equal(collect(view.tree, byClass("dws-strip")).length, 1, "先拿到一波数据");
+
+    fail = true;
+    const nextTick = pending.shift();
+    assert.equal(typeof nextTick, "function", "应该已经排了下一轮");
+    await nextTick();
+    await flushMicrotasks();
+    view.rerender();
+
+    assert.equal(collect(view.tree, byClass("dws-strip")).length, 1, "接口抽一下不该把下载条清掉");
+    assert.equal(collect(view.tree, byClass("dws-dl")).length, 1);
+    assert.match(view.text(), /big\.bin/, "旧数据还在，等下一轮成功");
+  } finally {
+    globalThis.setTimeout = realSetTimeout;
+  }
 });
