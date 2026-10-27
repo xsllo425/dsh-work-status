@@ -784,7 +784,7 @@ test("上一轮的上下文压缩不留在本轮：时间轨和计数只算本�
   assert.match(text, /m00003/);
   assert.doesNotMatch(text, /m00001|m00002/);
   const metric = collect(view.tree, byClass("dws-metric")).map(textOf).join(" ");
-  assert.match(metric, /上下文压缩1 次/);
+  assert.match(metric, /压缩1 次/);
   assert.doesNotMatch(metric, /失败/);
 });
 
@@ -884,7 +884,7 @@ test("底栏“日志”：会话总计与逐轮记录，新的在前；再点�
   const text = textOf(log);
   assert.match(text, /共 56 轮 · 1235 步 · 1187 次调用/);
   assert.match(text, /推理 1h41m · 工具 20m11s/);
-  assert.match(text, /上下文压缩 31 次/);
+  assert.match(text, /压缩 31 次/);
   assert.ok(text.indexOf("第 56 轮") < text.indexOf("第 55 轮"), "新的在前");
   assert.match(text, /5 步 · 4 次调用/);
   assert.match(text, /已中断/);
