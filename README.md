@@ -66,6 +66,7 @@
 
 | 来源 | 命令 |
 | --- | --- |
+| npm（插件中心） | `dsh plugin --profile web add dsh-work-status`<br>（插件中心的「安装」按钮走同一条路） |
 | 本地目录 | `install link:E:/path/to/dsh-work-status` |
 | 打包文件 | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
 | GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>（插件内命令可简写为 `install github:xsllo425/dsh-work-status`） |
@@ -82,6 +83,7 @@
 
 | 装法 | 更新 |
 | --- | --- |
+| npm | 重跑安装命令就是更新：`dsh plugin --profile web add dsh-work-status`（装到最新版） |
 | GitHub | 重跑安装命令就是更新：`dsh plugin --profile web add github:xsllo425/dsh-work-status`。想固定在某个版本，在仓库地址后面加 tag（形如 `#v0.9.1`，版本号见 Releases 页） |
 | 本地目录 | 在那个目录 `git pull`；用 `link:` 装的话改完重启就生效 |
 | 打包文件 | 重新 `npm pack`，再按 `file:` 装一遍 |

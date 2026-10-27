@@ -55,7 +55,21 @@ E:/DSH/patch/gh.sh release create vX.Y.Z --title vX.Y.Z --notes-file E:/DSH/patc
 
 `gh.sh` 从 `git credential` 现取 token，不在磁盘留凭据。建完确认 `draft=false`。
 
-## 7. 更新市场索引里的提交 issue
+## 7. 发 npm（插件中心只认 npm 安装）
+
+`dsh-plugin-hub` 的目录里，只有能从 npm 安装的插件才显示「一键安装」。发布走官方源：`package.json` 的 `publishConfig` 已经固定成 `https://registry.npmjs.org/` + `access: public`，本机 registry 指到镜像是另一回事，不影响发布。
+
+```bash
+npm whoami --registry=https://registry.npmjs.org/   # 没登录先登录（浏览器授权一次即可）
+npm login --registry=https://registry.npmjs.org/
+npm publish                                          # publishConfig 会把源和可见性定死
+```
+
+- 登录的是 npm 官方站，不是国内镜像（镜像那条链只能读、发不了包）。
+- 包名一旦发布就永久占用；同一个版本号不能重发，发错了只能 `npm deprecate`。
+- 发完核对：`npm view dsh-work-status version`，再在目录里搜一眼是否已能直接装。
+
+## 8. 更新市场索引里的提交 issue
 
 `2BingLing/dsh-market` 的 issue #294 是当初提交插件的那条。市场管道每天 06:00（UTC）扫一遍，从正文里读安装命令和描述，所以要改正文而不是发评论：
 
@@ -65,16 +79,16 @@ E:/DSH/patch/gh.sh issue view 294 -R 2BingLing/dsh-market --json body -q .body >
 E:/DSH/patch/gh.sh issue edit 294 -R 2BingLing/dsh-market --body-file E:/DSH/patch/issue-294-body.md
 ```
 
-## 8. 本机实际看一眼
+## 9. 本机实际看一眼
 
 插件是通过软链接装进 profile 的（`~/.dsh/profiles/desktop/node_modules/dsh-work-status` → 这个仓库），重启 DSH 窗口就是最新代码。加「整轮」级别的功能时，建议再走一遍干净安装：`npm pack` 出 tarball，插件页按 `file:` 装上，确认行会出现、展开、日志、复制、收起都正常，卸载后不留东西。
 
-## 9. 仓库元数据（偶尔核对）
+## 10. 仓库元数据（偶尔核对）
 
 - `package.json`：`author`、`repository`、`homepage`、`bugs`、`keywords`、`license: MIT`
 - `LICENSE`（MIT）与 `NOTICE`（源自 `dsh-agent-activity` 0.9.0）都在
 - GitHub topics：`dsh-plugin`、`deepseek-harness`、`dsh`、`plugin`
-- npm registry 不发布，装法只有 GitHub / 本地目录 / tarball
+- npm 上有正式版本（插件中心可直接装）；GitHub / 本地目录 / tarball 三种装法照旧可用
 
 ## 记录
 

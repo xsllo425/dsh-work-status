@@ -69,6 +69,7 @@ The package is a DeepSeek Harness bundle. Install it with the Plugin Manager:
 
 | Source | Command |
 | --- | --- |
+| npm (plugin center) | `dsh plugin --profile web add dsh-work-status`<br>(the “Install” button in the plugin center uses the same path) |
 | Local directory | `install link:E:/path/to/dsh-work-status` |
 | Packed tarball | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
 | GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>(inside a DSH chat the shorthand `install github:xsllo425/dsh-work-status` works too) |
@@ -85,6 +86,7 @@ The plugin never touches the network and cannot update itself; how you installed
 
 | Installed as | Update |
 | --- | --- |
+| npm | Re-run the install command to upgrade: `dsh plugin --profile web add dsh-work-status` |
 | GitHub | Re-running the install command updates it: `dsh plugin --profile web add github:xsllo425/dsh-work-status`. To pin a version, add a tag to the repository URL (like `#v0.9.1`; tags are listed on the Releases page) |
 | Local directory | `git pull` in that directory; with `link:` a restart picks it up |
 | Packed tarball | `npm pack` again, then install the `file:` once more |

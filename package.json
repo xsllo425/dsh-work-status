@@ -65,5 +65,9 @@
   "homepage": "https://github.com/xsllo425/dsh-work-status#readme",
   "bugs": {
     "url": "https://github.com/xsllo425/dsh-work-status/issues"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
   }
 }
