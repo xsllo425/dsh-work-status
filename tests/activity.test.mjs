@@ -146,6 +146,39 @@ test("turn end closes the turn and maps a hard failure to the error phase", () =
   assert.equal(stopped.phase, "aborted");
 });
 
+test("turn/end keeps why the turn stopped: limit with a wait time, context, truncation", () => {
+  const started = replay([ev("turn/start", 1000, { turn: 1 })]);
+
+  const rate = applyEvent(started, ev("turn/end", 2000, {
+    turn: 1,
+    reason: { kind: "error", error: { message: "Too Many Requests", code: "RATE_LIMIT", status: 429, providerRetryAfterMs: 8000 } },
+  }));
+  assert.equal(rate.endCause.cause, "ratelimit");
+  assert.equal(rate.endCause.status, 429);
+  assert.equal(rate.endCause.retryAfterMs, 8000);
+
+  const context = applyEvent(started, ev("turn/end", 2000, {
+    turn: 1,
+    reason: { kind: "error", error: { message: "maximum context length exceeded", code: "CONTEXT_WINDOW_EXCEEDED" } },
+  }));
+  assert.equal(context.endCause.cause, "context");
+
+  const quota = applyEvent(started, ev("turn/end", 2000, {
+    turn: 1,
+    reason: { kind: "error", error: { message: "Insufficient Balance", code: "HTTP_402", status: 402 } },
+  }));
+  assert.equal(quota.endCause.cause, "quota");
+
+  const cut = applyEvent(started, ev("turn/end", 2000, { turn: 1, reason: { kind: "max-tokens" } }));
+  assert.equal(cut.endCause.cause, "truncated");
+
+  // 新一轮一开，上一轮的原因就清掉：卡片只说本轮的事。
+  assert.equal(applyEvent(rate, ev("turn/start", 9000, { turn: 2 })).endCause, null);
+  // 正常收尾没有原因可说。
+  const finished = applyEvent(started, ev("turn/end", 2000, { turn: 1, reason: { kind: "completed" } }));
+  assert.equal(finished.endCause.cause, "");
+});
+
 test("the user's instruction is remembered so the card can frame the work", () => {
   const state = replay([
     ev("user/message", 900, {

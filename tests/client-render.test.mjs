@@ -301,6 +301,60 @@ test("长时间没有新事件：有工具在跑只标那一行，没在飞才�
   assert.deepEqual(headFlags(fresh), []);
 });
 
+test("这一轮为什么停：日志给了原因就直说，限流还带上要等多久", async () => {
+  const mount = await loadBadge();
+  const headFlags = (view) => collect(view.tree, byClass("dws-head-flag")).map((node) => textOf(node));
+  const rate = mount(props({
+    phase: "error",
+    endedAt: NOW - 1000,
+    endCause: { kind: "error", cause: "ratelimit", code: "RATE_LIMIT", status: 429, retryAfterMs: 8000, message: "Too Many Requests" },
+  }));
+  rate.click(byClass("dws-chip"));
+  const flags = headFlags(rate);
+  assert.equal(flags.length, 1);
+  assert.match(flags[0], /限流.*8.*秒/);
+  const node = collect(rate.tree, byClass("dws-head-flag"))[0];
+  assert.match(String(node.props.title), /429|Too Many/, "悬停里留原始错误码，方便排查");
+
+  const context = mount(props({
+    phase: "error",
+    endedAt: NOW - 1000,
+    endCause: { kind: "error", cause: "context", code: "CONTEXT_WINDOW_EXCEEDED", status: 0, retryAfterMs: 0, message: "" },
+  }));
+  context.click(byClass("dws-chip"));
+  assert.match(headFlags(context)[0] ?? "", /上下文满了/);
+
+  // 自己按停的，不用说；正常完成也不用说。
+  const stopped = mount(props({
+    phase: "aborted",
+    endedAt: NOW - 1000,
+    endCause: { kind: "interrupted", cause: "interrupted", code: "", status: 0, retryAfterMs: 0, message: "" },
+  }));
+  stopped.click(byClass("dws-chip"));
+  assert.deepEqual(headFlags(stopped), []);
+});
+
+test("命令、网址里夹着凭据，卡片也只显示遮掉的样子", async () => {
+  const mount = await loadBadge();
+  const items = [call("mystery_tool", "Authorization: Bearer abcdef123456", "ok", { targetKind: "other" })];
+  const view = mount(props({ items, counts: { steps: 1, tools: 1, errors: 0 } }));
+  view.click(byClass("dws-chip"));
+  const text = view.text();
+  assert.doesNotMatch(text, /abcdef123456/);
+  assert.match(text, /\*\*\*/);
+});
+
+test("名字认不出的工具：参数露了用途就按种类说，不留英文残片", async () => {
+  const mount = await loadBadge();
+  const items = [call("frobnicate", "git status --short", "ok", { kind: "command" })];
+  const view = mount(props({ items, counts: { steps: 1, tools: 1, errors: 0 } }));
+  view.click(byClass("dws-chip"));
+  const row = collect(view.tree, byClass("dws-row")).at(-1);
+  assert.match(textOf(row), /跑命令/);
+  assert.match(textOf(row), /git status/);
+  assert.doesNotMatch(textOf(row), /frobnicate/);
+});
+
 test("模型还在念参数时先说接下来做什么，参数没闭合就保持原样", async () => {
   const events = [];
   let change = { kind: "append", entries: [] };
