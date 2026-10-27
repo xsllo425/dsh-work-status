@@ -49,7 +49,7 @@ Open it:
 - **One line by default** — current step plus elapsed time while working; completed step count when idle. Nothing floats over the conversation.
 - **Goal and current problem** — the user's request and the sub-problem the agent is on, each clamped and expandable.
 - **Three separate clocks** — model reasoning, tool calls, context compression. They are never merged into one "elapsed" number, and per-step cost is broken down by category (local / network / background) instead of one opaque duration.
-- **Progress only when it is real** — a percentage exists only when the agent keeps a todo list (`确定 3/4 · 75%`, labelled *per current list*). Otherwise the card says *unknown · elapsed*; it never extrapolates a whole-turn ETA.
+- **Progress only when it is real** — a percentage exists only when the agent keeps a todo list (`确定 3/4 · 75%`, labelled *per current list*). Otherwise that line is simply not drawn; it never extrapolates a whole-turn ETA.
 - **Every action in plain words** — `跑测试`, `改文件`, `压缩上下文`, with target and duration. A failure is tagged *未恢复* or *已恢复* (a later success on the same target) and, when the error is recognisable, explained in one sentence instead of a stack trace.
 - **Context maintenance as normal rows** — compress / decompress / search appear inline with tool rows, so you see where they happened; they do not inflate step counts.
 - **Previous turn** — the last turn folds into one row under a divider, so the card still answers "what did it just do?" after a turn ends.
@@ -146,7 +146,7 @@ A 7-slide intro deck: [docs/dsh-work-status-intro.pptx](docs/dsh-work-status-int
 - Everything shown comes from the session event stream; when a tool result never arrives the row says “结果未知” instead of guessing.
 - Numbers are per turn or per step of the **current session**. Cross-session history is local only, capped, and can be deleted (see “Local data” below).
 - The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set `<html data-dws-pet="off">` to drop the hook — the status chip comes back automatically.
-- Percentages are only drawn when the plan has a real total (n/m todos). Otherwise you get elapsed time and “unknown”, never an invented bar.
+- Percentages are only drawn when the plan has a real total (n/m todos). Otherwise the bar line is simply not drawn, never an invented bar.
 
 ## License
 
