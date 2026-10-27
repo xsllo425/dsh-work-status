@@ -6,7 +6,7 @@
 
 ## 一、「超过 p75 的异常步只有 7.6%」这个数不成立
 
-旧数是 `E:/DSH/patch/eval/stepstat.mjs:122` 算出来的，它做的是：
+旧数是 `E:/Work/patch/eval/stepstat.mjs:122` 算出来的，它做的是：
 
 1. 把每一步切成 25% / 50% / 75% 三个时间点（检查点）；
 2. 在每个检查点，取**过去同类步的 p75**（要样本 ≥3）；
@@ -18,7 +18,7 @@
 - **基线混入自己**：代码先把当前步的耗时 push 进历史，再算分位（`stepstat.mjs:111` 在 109 之后），基线包含了被评估者本身，称为 in-sample。正确做法是留一法或只用前序样本。
 - **分母是检查点不是步**：一条 20 秒的步贡献 3 个检查点，一条 0.4 秒的步贡献 0 个，长步被过度加权。
 
-**同一批数据、换成正确的口径重算**（`E:/DSH/patch/eval/step-audit.mjs`，155,727 个不进上下文维护的步）：
+**同一批数据、换成正确的口径重算**（`E:/Work/patch/eval/step-audit.mjs`，155,727 个不进上下文维护的步）：
 
 | 口径 | 定义 | 「超过 p75」的比例 |
 |---|---|---|
@@ -67,6 +67,6 @@
 ## 五、复现方式
 
 ```
-node E:/DSH/patch/eval/step-audit.mjs     # 输出 step-audit.json 与前文的三个比例
+node E:/Work/patch/eval/step-audit.mjs     # 输出 step-audit.json 与前文的三个比例
 node --test tests/*.test.mjs              # 48 项，含本次新增的分层耗时与降级用例
 ```

@@ -23,5 +23,5 @@
 - 尚未验证宿主流式阶段早于 tool/call 落盘时的实时显示延迟，也未做重启后的读/写/并行实机验收。
 
 ## 留存
-快照：E:/DSH/patch/dsh-work-status-snapshots/0.4.10。
+快照：E:/Work/patch/dsh-work-status-snapshots/0.4.10。
 保留此前 0.4.9 工作及未提交修改；未提交或推送。

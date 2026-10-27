@@ -2,9 +2,9 @@
 
 ## 一、位置与安装链
 
-- 源码：`E:/DSH/dsh-work-status`（git 仓库，分支以 `git branch` 为准）
+- 源码：`E:/Work/dsh-work-status`（git 仓库，分支以 `git branch` 为准）
 - 包名 / 版本：`dsh-work-status` / `0.4.11`（`package.json`）
-- 装机：`plugin-manager` 执行的 `install link:E:/DSH/dsh-work-status`
+- 装机：`plugin-manager` 执行的 `install link:E:/Work/dsh-work-status`
   - 落地路径：`C:/Users/17416/.dsh/profiles/desktop/node_modules/dsh-work-status` → 软链回源码目录，改源码即改装机
   - 加载登记：desktop profile 的 `package.json` → `dsh.profile.bundles` 含 `work-status`；`cordis.patch.yml` 含 `- id: work-status`
   - 该 profile 里 `dsh-agent-activity` 已被移出加载列表（包体仍在），同一插槽同时挂两个包会叠出两份界面
@@ -17,12 +17,12 @@
 | 语法检查 | `node --check lib/client.js`（以及 `lib/activity.js`、`lib/index.js`） |
 | 全量测试 | `node --test tests/*.test.mjs`（0.4.11 上 66 项） |
 | 包结构自检 | `node scripts/check-manifest.mjs`（校验 `package.json`、`dsh.client`、`cordis.patch.yml`、插槽名白名单） |
-| 抓真机窗口 | `pwsh -NoProfile -File E:/DSH/patch/capture-dsh-window.ps1 -OutFile <png>`（必须 pwsh 7） |
-| 重启 DSH | `pwsh -NoProfile -File E:/DSH/patch/restart-dsh.ps1` |
+| 抓真机窗口 | `pwsh -NoProfile -File E:/Work/patch/capture-dsh-window.ps1 -OutFile <png>`（必须 pwsh 7） |
+| 重启 DSH | `pwsh -NoProfile -File E:/Work/patch/restart-dsh.ps1` |
 | 记录插件变更 | `node "C:/Users/17416/.dsh/skills/plugin-manager/dsh-plugin.cjs" note "更新" dsh-work-status "…"` |
 
 - 客户端 JS 会热加载，样式标签同时换成新版（`installStyle` 就地替换）；CSS 简写 `font` 里不能写 `inherit`（整条失效），宿主侧 `lib/activity.js` 或 `stateVersion` 变更需要重启 DSH 才生效
-- 每个发布版本留快照：`E:/DSH/patch/dsh-work-status-snapshots/<version>/{lib,tests}`
+- 每个发布版本留快照：`E:/Work/patch/dsh-work-status-snapshots/<version>/{lib,tests}`
 
 ## 三、宿主侧：会话投影契约
 
@@ -121,7 +121,7 @@ ctx.slots.inject(SLOT, () => ctx.slots.register({ name: SLOT, id: ENTRY_ID, orde
 
 ## 七、本机验证过的技术约束
 
-- 会话日志为多帧 zstd，Node `zlib.createZstdDecompress` 读多帧会报 `ZSTD_error_prefix_unknown`；用 Python `zstandard.stream_reader`（`E:/DSH/patch/eval/unzstd.py`）
+- 会话日志为多帧 zstd，Node `zlib.createZstdDecompress` 读多帧会报 `ZSTD_error_prefix_unknown`；用 Python `zstandard.stream_reader`（`E:/Work/patch/eval/unzstd.py`）
 - jsdom 无 `innerText`；节点必须先 `document.body.appendChild(root)` 再 `getBoundingClientRect()`，否则尺寸为 0
 - 测试里的宿主 `ctx` 必须有 `locale.register`，否则组件在 `t()` 处抛错
 - 宿主插槽容器带 `transform` 时，子元素 `position: fixed` 会相对该容器解析；面板定位因此按视口坐标手算

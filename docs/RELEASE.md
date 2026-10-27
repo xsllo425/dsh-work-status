@@ -47,10 +47,10 @@ tag 也会触发一次 CI，等它绿。
 
 ## 6. 建 Release
 
-说明先写成文件（仓库外，例如 `E:/DSH/patch/release-X.Y.Z.md`），包含这版改了什么、安装命令（带 tag）、已知限制。
+说明先写成文件（仓库外，例如 `E:/Work/patch/release-X.Y.Z.md`），包含这版改了什么、安装命令（带 tag）、已知限制。
 
 ```bash
-E:/DSH/patch/gh.sh release create vX.Y.Z --title vX.Y.Z --notes-file E:/DSH/patch/release-X.Y.Z.md
+E:/Work/patch/gh.sh release create vX.Y.Z --title vX.Y.Z --notes-file E:/Work/patch/release-X.Y.Z.md
 ```
 
 `gh.sh` 从 `git credential` 现取 token，不在磁盘留凭据。建完确认 `draft=false`。
@@ -74,9 +74,9 @@ npm publish                                          # publishConfig 会把源�
 `2BingLing/dsh-market` 的 issue #294 是当初提交插件的那条。市场管道每天 06:00（UTC）扫一遍，从正文里读安装命令和描述，所以要改正文而不是发评论：
 
 ```bash
-E:/DSH/patch/gh.sh issue view 294 -R 2BingLing/dsh-market --json body -q .body > /tmp/294.md
+E:/Work/patch/gh.sh issue view 294 -R 2BingLing/dsh-market --json body -q .body > /tmp/294.md
 # 只改版本号、测试数两处，写回：
-E:/DSH/patch/gh.sh issue edit 294 -R 2BingLing/dsh-market --body-file E:/DSH/patch/issue-294-body.md
+E:/Work/patch/gh.sh issue edit 294 -R 2BingLing/dsh-market --body-file E:/Work/patch/issue-294-body.md
 ```
 
 ## 9. 本机实际看一眼

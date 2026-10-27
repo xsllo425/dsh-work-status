@@ -31,7 +31,7 @@
 | 清单自检 | `node scripts/check-manifest.mjs` 通过（字段、导出、补丁行、图标、语言包） |
 | CI | `ubuntu-latest` + `windows-latest`，Node 24：三处 `--check`、全量测试、清单自检 |
 | 发布包 | `npm pack` 28 个文件、468 KB；包含全部测试套件与 `README.en.md` |
-| 安装状态 | 本机 profile 以 `link:E:/DSH/dsh-work-status` 装入，版本 0.7.0，与仓库一致 |
+| 安装状态 | 本机 profile 以 `link:E:/Work/dsh-work-status` 装入，版本 0.7.0，与仓库一致 |
 | 仓库元数据 | Public、MIT、默认分支 `main`、Topics 7 个、Website 指向介绍 PPT |
 
 ## 三、已知限制（写清楚，不假装没有）

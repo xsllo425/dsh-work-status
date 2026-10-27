@@ -4,7 +4,7 @@
 
 给外部审阅者的一页纸：这是什么、现在什么状态、怎么跑、希望你重点看什么。
 
-- 仓库：`E:/DSH/dsh-work-status`（本地 git，已提交 0.4.18，**尚未推送**）
+- 仓库：`E:/Work/dsh-work-status`（本地 git，已提交 0.4.18，**尚未推送**）
 - 版本：`0.4.18`，MIT，零运行时依赖
 - 测试：`node --test tests/*.test.mjs` → 69 项全过；`node scripts/check-manifest.mjs` → 通过
 - 截图：`docs/screenshots/panel-light.png`、`panel-dark.png`
@@ -33,7 +33,7 @@
 ## 怎么跑起来
 
 ```bash
-cd E:/DSH/dsh-work-status
+cd E:/Work/dsh-work-status
 node --test tests/*.test.mjs        # 68 项
 node scripts/check-manifest.mjs     # 插件清单自检
 npm pack                            # 打包 dsh-work-status-0.4.18.tgz
@@ -43,7 +43,7 @@ npm pack                            # 打包 dsh-work-status-0.4.18.tgz
 
 ```bash
 # 方式一：本地 link（开发）
-node "%USERPROFILE%\.dsh\skills\plugin-manager\dsh-plugin.cjs" install "link:E:/DSH/dsh-work-status"
+node "%USERPROFILE%\.dsh\skills\plugin-manager\dsh-plugin.cjs" install "link:E:/Work/dsh-work-status"
 # 方式二：tarball
 npm install dsh-work-status-0.4.18.tgz      # 在 profile 的 node_modules 里
 ```
