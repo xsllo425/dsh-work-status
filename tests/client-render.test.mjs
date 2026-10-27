@@ -366,6 +366,63 @@ test("模型已经在写正文时说「写回答」，只吐推理时还是「�
   assert.match(nowRow(), /模型思考中/, "正文收了、调用开始了，就交回时间轨");
 });
 
+test("模型一直不出声：过了 10 秒在现在那行说「还没输出」，已经在催就不叠「有点久」", async () => {
+  const mount = await loadBadge();
+  const waitTags = (view) => collect(view.tree, (node) => node.props?.["data-kind"] === "wait").map(textOf);
+
+  const early = mount(props({ stepStartAt: NOW - 5000, items: [] }));
+  early.click(byClass("dws-chip"));
+  assert.deepEqual(waitTags(early), [], "五秒还不算异常，先不说");
+
+  const late = mount(props({ stepStartAt: NOW - 12000, items: [] }));
+  late.click(byClass("dws-chip"));
+  assert.deepEqual(waitTags(late), ["还没输出"]);
+
+  const slowWait = mount(props({ stepStartAt: NOW - 25000, items: [] }));
+  slowWait.click(byClass("dws-chip"));
+  assert.deepEqual(waitTags(slowWait), ["还没输出"], "已经在催了就不再挂「有点久」");
+  assert.doesNotMatch(slowWait.text(), /有点久/);
+});
+
+test("说着说着断了：超过 5 秒在现在那行说「停了 Xs」，新一段来了就撤", async () => {
+  const realNow = Date.now;
+  let clock = NOW;
+  Date.now = () => clock;
+  try {
+    const events = [];
+    let change = { kind: "append", entries: [] };
+    const listeners = new Set();
+    const source = {
+      getSnapshot: () => ({ entries: events.slice(), change }),
+      subscribe: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+    };
+    const mount = await loadBadge({ sessions: { binding: () => ({ eventSource: source }) } });
+    const view = mount({ ...props({ stepStartAt: clock - 3000, items: [] }), sid: "s1" });
+    view.click(byClass("dws-chip"));
+    const waitTags = () => collect(view.tree, (node) => node.props?.["data-kind"] === "wait").map(textOf);
+    const push = (event) => {
+      const entry = { type: "transient", event };
+      events.push(entry);
+      change = { kind: "append", entries: [entry] };
+      for (const fn of listeners) fn();
+      view.rerender();
+    };
+    const chunk = (type) => push({ type: "assistant/live-chunk", data: { chunk: { type, index: 0, text: "字" } } });
+
+    chunk("text-delta");
+    assert.deepEqual(waitTags(), [], "刚吐过字，不该说停了");
+
+    clock += 6000;
+    view.rerender();
+    assert.match(waitTags()[0] ?? "", /停了\s*6(\.0)?s/);
+
+    chunk("text-delta");
+    assert.deepEqual(waitTags(), [], "又出声了，这句就撤");
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 test("时间轨固定 4 行：有没有「现在」那行，总行数都不变", async () => {
   const mount = await loadBadge();
   const count = (view) => collect(view.tree, byClass("dws-item")).length;
