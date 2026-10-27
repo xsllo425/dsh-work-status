@@ -1144,3 +1144,23 @@ test("这一轮结束时补一句：失败几次、同一处反复了几次", as
   running.click(byClass("dws-chip"));
   assert.equal(collect(running.tree, byClass("dws-sum")).length, 0, "还在跑就先别下结论");
 });
+
+test("切会话重新挂载：吉祥物已在页面上，首帧就不画徽标（不闪）", async () => {
+  const mount = await loadBadge();
+  globalThis.document.querySelector = (selector) => (selector.includes("dsh-claude-deepy") ? { style: {}, getAttribute: () => null, setAttribute() {} } : null);
+  const view = mount(props({ phase: "done" }));
+  assert.equal(collect(view.tree, byClass("dws-chip")).length, 0);
+});
+
+test("主题在但吉祥物还没画出来：先不画徽标，等宽限期", async () => {
+  const mount = await loadBadge();
+  globalThis.document.body = { hasAttribute: (name) => name === "data-dsh-claude-style" };
+  const view = mount(props({ phase: "done" }));
+  assert.equal(collect(view.tree, byClass("dws-chip")).length, 0);
+});
+
+test("没有主题也没有吉祥物：照旧马上画徽标", async () => {
+  const mount = await loadBadge();
+  const view = mount(props({ phase: "done" }));
+  assert.equal(collect(view.tree, byClass("dws-chip")).length, 1);
+});
