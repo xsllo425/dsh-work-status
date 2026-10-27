@@ -349,6 +349,19 @@ test("时间轨固定 4 行：有没有「现在」那行，总行数都不变",
   assert.equal(count(done), 4, "本轮结束：四行历史");
 });
 
+test("问题还挂着时说「等你回答」，答完了记成「问你一句」", async () => {
+  const mount = await loadBadge();
+  const open = call("ask_user_question", "", "running", { id: "ask-1", t0: NOW - 3000, t1: 0 });
+  const waiting = mount(props({ items: [...FIVE_CALLS, open] }));
+  waiting.click(byClass("dws-chip"));
+  assert.match(textOf(waiting.tree), /等你回答/, "还没回答就别写成普通工具在跑");
+
+  const answered = mount(props({ items: [...FIVE_CALLS, { ...open, status: "ok", t1: NOW - 1000 }] }));
+  answered.click(byClass("dws-chip"));
+  assert.match(textOf(answered.tree), /问你一句/, "答完了就回到平常的说法");
+  assert.doesNotMatch(textOf(answered.tree), /等你回答/);
+});
+
 test("有 todo 才报进度，没清单就不画那行", async () => {
   const mount = await loadBadge();
   const todos = [
