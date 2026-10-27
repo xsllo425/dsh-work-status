@@ -788,13 +788,13 @@ test("上一轮的上下文压缩不留在本轮：时间轨和计数只算本�
   assert.doesNotMatch(metric, /失败/);
 });
 
-test("模型推理和工具调用各取宿主算好的本轮合计", async () => {
+test("推理和工具各取宿主算好的本轮合计", async () => {
   const mount = await loadBadge();
   const view = mount(props({ phase: "done", modelMs: 14000, toolMs: 633, stepModelDone: true }));
   view.click(byClass("dws-chip"));
   const metric = collect(view.tree, byClass("dws-metric")).map(textOf).join(" | ");
-  assert.match(metric, /模型推理14s/);
-  assert.match(metric, /工具调用633ms/);
+  assert.match(metric, /推理14s/);
+  assert.match(metric, /工具633ms/);
 });
 
 test("一步展开后写成“几点 → 几点”与用时", async () => {
@@ -859,7 +859,7 @@ test("简单对话：没调用工具的一轮写“直接回答”，不显示 0
   view.click(byClass("dws-chip"));
   const text = view.text();
   assert.match(text, /本轮 · 直接回答/);
-  assert.doesNotMatch(text, /0 步|工具调用|noEvents|还没有动作/);
+  assert.doesNotMatch(text, /0 步|工具|noEvents|还没有动作/);
   assert.match(textOf(collect(view.tree, byClass("dws-head-time"))[0]), /7\.1s/);
 });
 
