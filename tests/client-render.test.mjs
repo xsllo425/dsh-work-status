@@ -587,6 +587,23 @@ test("最新三条常显，其余折进本轮历史，点开再收起", async ()
   assert.equal(collect(view.tree, byClass("dws-item")).filter((node) => node.props.className !== "dws-item dws-item-now").length, 3, "再点应收回三条");
 });
 
+test("展开历史后新开始的操作仍在时间轨最上面", async () => {
+  let state = activity({ items: FIVE_CALLS.map((item, i) => ({ ...item, id: String(i) })) });
+  const mount = await loadBadge();
+  const view = mount({ useProjection: (name) => name === "workStatus" ? state : [] });
+  view.click(byClass("dws-chip"));
+  view.click(byClass("dws-history"));
+  state = activity({ items: [...state.items, call("read", "new-file.js", "running", { id: "new", t0: NOW, t1: 0 })] });
+  view.rerender();
+  const rows = collect(view.tree, byClass("dws-item"));
+  assert.equal(rows[0].props["data-status"], "running");
+  assert.match(textOf(rows[0]), /new-file/);
+  assert.equal(rows.filter((row) => row.props["data-status"] === "running").length, 1);
+  view.click(byClass("dws-history"));
+  const collapsed = collect(view.tree, byClass("dws-item"));
+  assert.equal(collapsed[0].props["data-status"], "running");
+});
+
 test("快的连招不会把整屏换掉：每行至少停 600ms，后来的排队等位", async () => {
   const realNow = Date.now;
   let clock = NOW;

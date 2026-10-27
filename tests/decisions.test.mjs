@@ -56,7 +56,7 @@ test("场景 2：排除错误假设（调用失败但说明了路不通）算信
   assert.equal(state.decisionCounts.info, 1);
 });
 
-test("场景 3：连续重复同一动作且没有新证据，才标疑似重复并累计停滞", () => {
+test("场景 3：连续相同读取只标重复动作，不推断结果", () => {
   const repeat = (step, offset) => [
     stepStart(step, offset),
     call("c" + step, "read_file", { path: "package.json" }, offset + 10),
@@ -68,7 +68,33 @@ test("场景 3：连续重复同一动作且没有新证据，才标疑似重复
   assert.deepEqual(outcomes, ["info", "repeat", "repeat"], "第一次读到东西算新证据，之后才算重复");
   assert.equal(state.decisionCounts.repeat, 2);
   assert.equal(state.decisions.length, 3);
-  assert.ok(state.stall >= 2, "连续重复两次以上才提示疑似停滞");
+  assert.equal(state.repeatRead.count, 3);
+  assert.match(state.decisions.at(-1).reasons[0], /结果是否变化无法判断/);
+});
+
+test("重复读取不推断结果，修改参数、写入、失败、并行或压缩会中断连续性", () => {
+  const readStep = (n, args = { path: "a.md" }, output = "one", failed = false) => [
+    stepStart(n, n * 100), call("r" + n, "read_file", args, n * 100 + 10), done("r" + n, output, n * 100 + 20, failed),
+  ];
+  const changedResult = fold([turnStart(), ...readStep(1), ...readStep(2, { path: "a.md" }, "two"), turnEnd(400)]);
+  assert.equal(changedResult.repeatRead.count, 2);
+  assert.match(changedResult.decisions.at(-1).reasons[0], /无法判断/);
+  const differentArgs = fold([turnStart(), ...readStep(1), ...readStep(2, { path: "a.md", offset: 10 }), turnEnd(400)]);
+  assert.equal(differentArgs.repeatRead.count, 1);
+  const interruptions = [
+    [call("x", "write_file", { path: "a.md" }, 210), done("x", "written", 220)],
+    [call("x", "compress", { startId: "m1", endId: "m2" }, 210), done("x", "done", 220)],
+    [call("x", "read_file", { path: "a.md" }, 210), call("y", "read_file", { path: "a.md" }, 211), done("x", "a", 220), done("y", "a", 221)],
+    [call("x", "read_file", { path: "a.md" }, 210), done("x", "error", 220, true)],
+    [call("x", "read_file", {}, 210), done("x", "unknown", 220)],
+  ];
+  for (const middle of interruptions) {
+    const state = fold([turnStart(), ...readStep(1), stepStart(2, 200), ...middle, ...readStep(3), turnEnd(500)]);
+    assert.equal(state.repeatRead.count, 1);
+    assert.notEqual(state.decisions.at(-1).outcome, "repeat");
+  }
+  const newTurn = fold([turnStart(), ...readStep(1), turnEnd(200), turnStart(2), ...readStep(1), turnEnd(300)]);
+  assert.equal(newTurn.repeatRead.count, 1);
 });
 
 test("场景 4：长时间只有说明没有动作，记“形成决策”，不编造成果", () => {
