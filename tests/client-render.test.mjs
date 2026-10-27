@@ -264,6 +264,43 @@ test("这一步跑过 20 秒：行尾挂「有点久」，加上就慢的整轮�
   assert.match(textOf(flag), /本轮偏长/);
 });
 
+test("长时间没有新事件：有工具在跑只标那一行，没在飞才在标题旁说一句", async () => {
+  const mount = await loadBadge();
+  const quietTags = (view) => collect(view.tree, (node) => node.props?.className === "dws-tag" && node.props?.["data-kind"] === "quiet").map(textOf);
+  const headFlags = (view) => collect(view.tree, byClass("dws-head-flag")).map(textOf);
+
+  // 没有工具在跑、60 秒没新事件：标题旁说一句，行上不挂。
+  const idle = mount(props({ updatedAt: NOW - 60000 }));
+  idle.click(byClass("dws-chip"));
+  assert.equal(headFlags(idle).length, 1);
+  assert.match(headFlags(idle)[0], /没动静/);
+  assert.deepEqual(quietTags(idle), []);
+
+  // 工具还在跑、60 秒没新事件：只标那一行，不说「卡住」——跑得慢和挂住，事件上分不出来。
+  const running = mount(props({
+    updatedAt: NOW - 60000,
+    items: [...FIVE_CALLS, call("ops_bash", "cat big.log", "running", { id: "run-1", t0: NOW - 90000, t1: 0 })],
+  }));
+  running.click(byClass("dws-chip"));
+  assert.deepEqual(quietTags(running), ["没新动静"]);
+  assert.deepEqual(headFlags(running), []);
+
+  // 正在等你回答：多久都别说没动静。
+  const waiting = mount(props({
+    updatedAt: NOW - 60000,
+    items: [...FIVE_CALLS, call("ask_user_question", "用哪个方案？", "running", { id: "ask-1", t0: NOW - 8000, t1: 0 })],
+  }));
+  waiting.click(byClass("dws-chip"));
+  assert.deepEqual(quietTags(waiting), []);
+  assert.deepEqual(headFlags(waiting), []);
+
+  // 刚有事件：什么都不说。
+  const fresh = mount(props({ updatedAt: NOW - 1000 }));
+  fresh.click(byClass("dws-chip"));
+  assert.deepEqual(quietTags(fresh), []);
+  assert.deepEqual(headFlags(fresh), []);
+});
+
 test("模型还在念参数时先说接下来做什么，参数没闭合就保持原样", async () => {
   const events = [];
   let change = { kind: "append", entries: [] };
