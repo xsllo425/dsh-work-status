@@ -34,7 +34,7 @@
 export const ACTIVITY_KEY = "workStatus";
 export const activityProjection = {
   key: ACTIVITY_KEY,
-  stateVersion: 18,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
+  stateVersion: 19,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
   stateSchema: plainSchema,  // 宽松 schema
   init: () => EMPTY,
   apply: (state, event) => applyEvent(state, event),

@@ -24,7 +24,7 @@ function replay(events) {
 test("the projection registers the documented key and carries a wire view", () => {
   assert.equal(ACTIVITY_KEY, "workStatus");
   assert.equal(activityProjection.key, "workStatus");
-  assert.equal(activityProjection.stateVersion, 18);
+  assert.equal(activityProjection.stateVersion, 19);
   assert.equal(typeof activityProjection.stateSchema.parse, "function");
   assert.equal(typeof activityProjection.wire.view, "function");
   const blank = emptyState();

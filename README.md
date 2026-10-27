@@ -117,7 +117,7 @@ node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、�
 
 ```
 lib/index.js        宿主入口，注册会话投影
-lib/activity.js     纯事件折叠（stateVersion 18，投影键 "workStatus"）
+lib/activity.js     纯事件折叠（stateVersion 19，投影键 "workStatus"）
 lib/client.js       Web UI：徽标、面板、时间轨、日志、双语文案、样式
 locale/*.json       插件列表里的名称与简介（中/英）
 icon.svg            插件图标

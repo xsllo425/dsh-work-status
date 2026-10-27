@@ -119,7 +119,7 @@ There are no runtime or dev dependencies; tests run on plain Node 24.
 
 ```
 lib/index.js        host entry — registers the session projection
-lib/activity.js     pure event fold (stateVersion 18, key "workStatus")
+lib/activity.js     pure event fold (stateVersion 19, key "workStatus")
 lib/client.js       web UI: chip, panel, timeline, log, dictionaries, CSS
 locale/*.json       plugin-list metadata (zh/en)
 icon.svg            plugin icon
