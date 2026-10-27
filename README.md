@@ -64,11 +64,16 @@
 
 ## 安装
 
-插件是一个 DeepSeek Harness bundle，用插件管家安装：
+插件是一个 DeepSeek Harness bundle，用插件管家安装。从 npm 装（插件中心的「安装」按钮走同一条路）：
+
+```bash
+dsh plugin --profile web add dsh-work-status
+```
+
+其它来源：
 
 | 来源 | 命令 |
 | --- | --- |
-| npm（插件中心） | `dsh plugin --profile web add dsh-work-status`<br>（插件中心的「安装」按钮走同一条路） |
 | 本地目录 | `install link:E:/path/to/dsh-work-status` |
 | 打包文件 | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
 | GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>（插件内命令可简写为 `install github:xsllo425/dsh-work-status`） |

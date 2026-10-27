@@ -69,14 +69,17 @@ npm publish                                          # publishConfig 会把源�
 - 包名一旦发布就永久占用；同一个版本号不能重发，发错了只能 `npm deprecate`。
 - 发完核对：`npm view dsh-work-status version`，再在目录里搜一眼是否已能直接装。
 
-## 8. 更新市场索引里的提交 issue
+## 8. 市场索引（不用手动更新，等一天）
 
-`2BingLing/dsh-market` 的 issue #294 是当初提交插件的那条。市场管道每天 06:00（UTC）扫一遍，从正文里读安装命令和描述，所以要改正文而不是发评论：
+市场是**拉**的模式，不是我们推。`2BingLing/dsh-market` 的采集器每天 UTC 19:00（北京 03:00，22:00 兜底）从 GitHub topic 扫描一遍，拿仓库的 `pushed_at` 跟缓存比：变了就重读 README、重解析安装命令、重抓简介。所以发版只需要「README 在 main 上 + npm 已发」，次日照常同步。
+
+- 提交 issue（#294）是**一次性**的收录入口：收到 → 自动回复 → 收录 → 自动关闭，之后与日常更新无关，不用管它开着还是关着。
+- 市场数据里没有版本号字段，详情页显示的是「更新时间」（= 仓库 `pushed_at`）。「有新版本」是市场插件在本机实时查 `registry/<包名>/latest` 比出来的，发到 npm 就有了。
+- issue 正文只影响三样：作者自述、中文简介、安装命令。改版本号、测试数写进正文**没有作用**。真要改这三样，开一条 `[数据修正]` issue（次日 06:00 自动应用）。
+- **安装命令必须放在 `bash` 代码块里**（或以 `$` 开头的行）。采集器只认这两种，表格里的命令不会被解析，详情页就没有可复制的安装命令。发版前顺手确认安装章节里有这样的块：
 
 ```bash
-E:/Work/patch/gh.sh issue view 294 -R 2BingLing/dsh-market --json body -q .body > /tmp/294.md
-# 只改版本号、测试数两处，写回：
-E:/Work/patch/gh.sh issue edit 294 -R 2BingLing/dsh-market --body-file E:/Work/patch/issue-294-body.md
+awk '/^## 安装/,/^## 更新/' README.md | grep -A3 '^```bash'
 ```
 
 ## 9. 本机实际看一眼

@@ -67,11 +67,16 @@ Open it:
 
 ## Install
 
-The package is a DeepSeek Harness bundle. Install it with the Plugin Manager:
+The package is a DeepSeek Harness bundle. Install it with the Plugin Manager. From npm (the “Install” button in the plugin center uses the same path):
+
+```bash
+dsh plugin --profile web add dsh-work-status
+```
+
+Other sources:
 
 | Source | Command |
 | --- | --- |
-| npm (plugin center) | `dsh plugin --profile web add dsh-work-status`<br>(the “Install” button in the plugin center uses the same path) |
 | Local directory | `install link:E:/path/to/dsh-work-status` |
 | Packed tarball | `npm pack` → `install file:./dsh-work-status-<version>.tgz` |
 | GitHub | `dsh plugin --profile web add github:xsllo425/dsh-work-status`<br>(inside a DSH chat the shorthand `install github:xsllo425/dsh-work-status` works too) |
