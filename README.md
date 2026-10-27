@@ -75,6 +75,18 @@
 - 卸载即移除这一行；插件不写自己的会话数据。
 - 没有需要配置的项。
 
+## 更新
+
+插件不联网、不会自己更新，装法决定更新方式：
+
+| 装法 | 更新 |
+| --- | --- |
+| GitHub | 带版本号重装一次：`dsh plugin --profile web add github:xsllo425/dsh-work-status#v0.9.0`（把 `v0.9.0` 换成想装的版本；写 `#main` 就是跟最新） |
+| 本地目录 | 在那个目录 `git pull`；用 `link:` 装的话改完重启就生效 |
+| 打包文件 | 重新 `npm pack`，再按 `file:` 装一遍 |
+
+想确认装的是哪一版，看 `~/.dsh/profiles/<profile>/node_modules/dsh-work-status/package.json` 里的 `version`。只改客户端的版本刷新页面就够，动过宿主侧的版本要重启 Harness。每一版改了什么见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 本地步耗时统计
 
 新会话的前几步想显示「同类通常 3–8 秒」，就得知道以前同类步用了多久，插件为此在本机记一份小统计。

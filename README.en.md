@@ -78,6 +78,18 @@ In the desktop app, Plugin Manager → 添加插件 also accepts the repository 
 - Uninstall removes the row; the plugin writes no session data of its own.
 - There is nothing to configure.
 
+## Updating
+
+The plugin never touches the network and cannot update itself; how you installed it decides how you update:
+
+| Installed as | Update |
+| --- | --- |
+| GitHub | Reinstall with a version: `dsh plugin --profile web add github:xsllo425/dsh-work-status#v0.9.0` (swap `v0.9.0` for the version you want; `#main` tracks the tip) |
+| Local directory | `git pull` in that directory; with `link:` a restart picks it up |
+| Packed tarball | `npm pack` again, then install the `file:` once more |
+
+To see which version is installed, read `version` in `~/.dsh/profiles/<profile>/node_modules/dsh-work-status/package.json`. Client-only releases load with a page refresh; releases that touch the host half need a Harness restart. See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+
 ## Local step statistics
 
 To show "usually 3–8s" on the very first turns of a new session, the plugin remembers how long each kind of step took in earlier sessions.
