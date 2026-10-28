@@ -11,20 +11,17 @@ import test from "node:test";
 
 import { applyEvent, emptyState } from "../lib/activity.js";
 
-function ev(type, time, data) {
-  return { type, seq: 1, time, data };
-}
-
-function replay(events) {
-  return events.reduce((state, event) => applyEvent(state, event), emptyState());
-}
+/** 一条日志事件；seq 对折叠没有意义，统一写 0。 */
+const at = (type, time, data = {}) => ({ type, seq: 0, time, data });
+/** 从空记录开始依次折叠。 */
+const play = (events) => events.reduce((state, event) => applyEvent(state, event), emptyState());
 
 function call(callId, name, args, step = 1) {
-  return ev("tool/call", 0, { turn: 1, step, callId, name, arguments: JSON.stringify(args) });
+  return at("tool/call", 0, { turn: 1, step, callId, name, arguments: JSON.stringify(args) });
 }
 
 function result(callId, time, failed = false, error = "") {
-  return ev("tool/result", time, {
+  return at("tool/result", time, {
     turn: 1,
     step: 1,
     message: { toolCallId: callId, isError: failed },
@@ -35,17 +32,17 @@ function result(callId, time, failed = false, error = "") {
 /** 一个带计划、正在做第一步的会话。 */
 function start() {
   return [
-    ev("turn/start", 1000, { turn: 1 }),
-    ev("user/message", 1001, { source: { kind: "user" }, content: [{ type: "text", text: "把活动卡片重做成三层信息" }] }),
-    ev("todo/write", 1002, { todos: [{ content: "重做卡片的信息层级", status: "in_progress" }] }),
-    ev("step/start", 1010, { turn: 1, step: 1 }),
+    at("turn/start", 1000, { turn: 1 }),
+    at("user/message", 1001, { source: { kind: "user" }, content: [{ type: "text", text: "把活动卡片重做成三层信息" }] }),
+    at("todo/write", 1002, { todos: [{ content: "重做卡片的信息层级", status: "in_progress" }] }),
+    at("step/start", 1010, { turn: 1, step: 1 }),
   ];
 }
 
 test("同一目标下连续读取、搜索多个文件：归到同一阶段，逐个留下证据", () => {
-  const state = replay([
+  const state = play([
     ...start(),
-    ev("assistant/message", 1020, {
+    at("assistant/message", 1020, {
       step: 1,
       message: {
         content: [
@@ -75,7 +72,7 @@ test("同一目标下连续读取、搜索多个文件：归到同一阶段，�
 });
 
 test("多次运行相同测试、其中一次失败：失败单独记账，后来成功仍算完成", () => {
-  const state = replay([
+  const state = play([
     ...start(),
     call("t1", "run", { command: "node --test tests/" }),
     result("t1", 1500),
@@ -93,13 +90,13 @@ test("多次运行相同测试、其中一次失败：失败单独记账，后�
 });
 
 test("模型连续调用工具、没有新解释文本：不拿上一段话冒充标题", () => {
-  const state = replay([
+  const state = play([
     ...start(),
-    ev("assistant/message", 1020, { step: 1, message: { content: [{ type: "text", text: "先看看插件怎么写的" }] } }),
+    at("assistant/message", 1020, { step: 1, message: { content: [{ type: "text", text: "先看看插件怎么写的" }] } }),
     call("a", "read", { file_path: "E:/p/lib/client.js" }),
     result("a", 1100),
-    ev("step/start", 1110, { turn: 1, step: 2 }),
-    ev("assistant/message", 1120, { step: 2, message: { content: [{ type: "tool-call", id: "b", name: "bash", arguments: '{"command":"node --check lib/client.js"}' }] } }),
+    at("step/start", 1110, { turn: 1, step: 2 }),
+    at("assistant/message", 1120, { step: 2, message: { content: [{ type: "tool-call", id: "b", name: "bash", arguments: '{"command":"node --check lib/client.js"}' }] } }),
     call("b", "bash", { command: "node --check lib/client.js" }, 2),
     result("b", 1200),
   ]);
@@ -111,9 +108,9 @@ test("模型连续调用工具、没有新解释文本：不拿上一段话冒�
 });
 
 test("billion-context 压缩 m00001–m00065：识别为上下文维护，不计入任务步数", () => {
-  const state = replay([
+  const state = play([
     ...start(),
-    ev("assistant/message", 1020, {
+    at("assistant/message", 1020, {
       step: 1,
       message: { content: [{ type: "tool-call", id: "z", name: "compress", arguments: '{"startId":"m00001","endId":"m00065"}' }] },
     }),
@@ -131,7 +128,7 @@ test("billion-context 压缩 m00001–m00065：识别为上下文维护，不计
 });
 
 test("恢复上下文与检索历史：同样归入上下文维护，范围各自可读", () => {
-  const state = replay([
+  const state = play([
     ...start(),
     call("d", "decompress", { startId: "m00001", endId: "m00065" }),
     result("d", 1100),
@@ -150,7 +147,7 @@ test("恢复上下文与检索历史：同样归入上下文维护，范围各�
 });
 
 test("不同安装形态：mcp 前缀的 ACP 工具同样识别，普通同名参数不误判", () => {
-  const state = replay([
+  const state = play([
     ...start(),
     call("m", "mcp__billion-context__compress", { startId: "m00010", endId: "m00020" }),
     result("m", 1100),
@@ -165,7 +162,7 @@ test("不同安装形态：mcp 前缀的 ACP 工具同样识别，普通同名�
 });
 
 test("没有安装 billion-context：一切照旧，普通工具不受影响", () => {
-  const state = replay([
+  const state = play([
     ...start(),
     call("a", "read", { file_path: "E:/p/README.md" }),
     result("a", 1100),
@@ -184,9 +181,9 @@ test("没有安装 billion-context：一切照旧，普通工具不受影响", (
 });
 
 test("用户正文里出现 m00001：只当文字，不触发任何上下文事件", () => {
-  const state = replay([
-    ev("turn/start", 1000, { turn: 1 }),
-    ev("user/message", 1001, {
+  const state = play([
+    at("turn/start", 1000, { turn: 1 }),
+    at("user/message", 1001, {
       source: { kind: "user" },
       content: [{ type: "text", text: "m00001–m00065 这段被压缩了吗？" }],
     }),
@@ -203,11 +200,11 @@ test("长会话高频事件与会话切换：条数有上限，换轮清空上�
     events.push(call("c" + index, "read", { file_path: "E:/p/lib/f" + index + ".js" }));
     events.push(result("c" + index, 1100 + index));
   }
-  const busy = replay(events);
+  const busy = play(events);
   assert.equal(busy.items.length, 32, "卡片只留最近 32 条，全会话也不会把内存拖垮");
   assert.equal(busy.items[31].target, "E:/p/lib/f99.js");
 
-  const switched = applyEvent(busy, ev("turn/start", 900000, { turn: 2 }));
+  const switched = applyEvent(busy, at("turn/start", 900000, { turn: 2 }));
   assert.equal(switched.turn, 2);
   assert.deepEqual(switched.items, []);
   assert.equal(switched.stage, null);
