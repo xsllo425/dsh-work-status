@@ -158,6 +158,20 @@ A 7-slide intro deck: [docs/dsh-work-status-intro.pptx](docs/dsh-work-status-int
 - The mascot hook is best-effort: it targets the dsh-claude-style mascot (a theme internal). If the theme changes, set `<html data-dws-pet="off">` to drop the hook — the status chip comes back automatically.
 - Percentages are only drawn when the plan has a real total (n/m todos). Otherwise the bar line is simply not drawn, never an invented bar.
 
+## Acknowledgments
+
+This plugin was written with help from several AI assistants. The list comes from the local session logs (DSH, Claude Code and Codex sessions in which a model actually edited this repository), ordered by how much each took part:
+
+- DeepSeek Flash
+- DeepSeek V4.1 Flash
+- Claude Opus 5.5
+- GPT-6.1 Terra
+- GPT-6 Astra
+- SCNet-Max
+- GLM-5.3 Flash
+- Kimi K3.1 Pro
+- StepFun Step-5 Preview
+
 ## License
 
 MIT. Derived in part from [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0 (MIT); see [NOTICE](NOTICE).

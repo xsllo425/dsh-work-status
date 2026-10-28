@@ -157,6 +157,20 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 - 桌宠联动是 best-effort：它盯的是 dsh-claude-style 的吉祥物，属于主题内部实现。主题一改就可能失效；给 `<html data-dws-pet="off">` 就能停掉联动，徽标会自动回来。
 - 只有计划有真实总数（n/m 待办）时才画百分比；没有就不画进度行，绝不编进度条。
 
+## 致谢
+
+这个插件是在多个 AI 助手的协助下写成的。名单按本机会话记录整理（DSH、Claude Code、Codex 的会话里，实际改过本仓库文件的模型），按参与多少排列：
+
+- DeepSeek Flash
+- DeepSeek V4.1 Flash
+- Claude Opus 5.5
+- GPT-6.1 Terra
+- GPT-6 Astra
+- SCNet-Max
+- GLM-5.3 Flash
+- Kimi K3.1 Pro
+- StepFun Step-5 Preview
+
 ## 许可
 
 MIT。部分代码派生自 [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0（MIT），见 [NOTICE](NOTICE)。
