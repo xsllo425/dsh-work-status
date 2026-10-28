@@ -198,7 +198,7 @@ test("收起态只有一个徽标：用时、呼吸点，读屏念得出现在�
   const chips = collect(view.tree, byClass("dws-chip"));
   assert.equal(chips.length, 1);
   assert.match(textOf(chips[0]), /1m00s|60s/);
-  assert.match(String(chips[0].props["aria-label"]), /改文件 数据代码/);
+  assert.match(String(chips[0].props["aria-label"]), /修改文件 数据代码/);
 });
 
 test("点开面板：当前动作在标题，最近几步各说各的事", async () => {
@@ -207,7 +207,7 @@ test("点开面板：当前动作在标题，最近几步各说各的事", async
   view.click(byClass("dws-chip"));
   assert.equal(collect(view.tree, byClass("dws-panel")).length, 1);
   const head = textOf(collect(view.tree, byClass("dws-head-text"))[0]);
-  assert.match(textOf(view.tree), /改文件s*界面代码/, "展开面板后正文里能看到最近的动作");
+  assert.match(textOf(view.tree), /修改文件\s*界面代码/, "展开面板后正文里能看到最近的动作");
 
   const rows = collect(view.tree, byClass("dws-row"));
   assert.ok(rows.length >= 3, `最近只画了 ${rows.length} 行`);
@@ -399,7 +399,7 @@ test("模型还在念参数时先说接下来做什么，参数没闭合就保�
   assert.match(nowRow(), /模型思考中/, "参数还没闭合时不能猜");
 
   delta('th":"lib/client.js"}');
-  assert.match(nowRow(), /读文件/);
+  assert.match(nowRow(), /看文件/);
   assert.match(nowRow(), /lib\/client\.js/);
 
   push({ type: "tool/call", data: { callId: "c1", name: "read" } }, "replace");
@@ -514,7 +514,7 @@ test("时间轨固定 4 行：有没有「现在」那行，总行数都不变",
   assert.equal(count(done), 4, "本轮结束：四行历史");
 });
 
-test("问题还挂着时说「等你回答」，答完了记成「问你一句」", async () => {
+test("问题还挂着时说「等你回答」，答完了记成「向你提问」", async () => {
   const mount = await loadBadge();
   const open = call("ask_user_question", "", "running", { id: "ask-1", t0: NOW - 3000, t1: 0 });
   const waiting = mount(props({ items: [...FIVE_CALLS, open] }));
@@ -523,7 +523,7 @@ test("问题还挂着时说「等你回答」，答完了记成「问你一句�
 
   const answered = mount(props({ items: [...FIVE_CALLS, { ...open, status: "ok", t1: NOW - 1000 }] }));
   answered.click(byClass("dws-chip"));
-  assert.match(textOf(answered.tree), /问你一句/, "答完了就回到平常的说法");
+  assert.match(textOf(answered.tree), /向你提问/, "答完了就回到平常的说法");
   assert.doesNotMatch(textOf(answered.tree), /等你回答/);
 });
 
@@ -564,7 +564,7 @@ test("进行中的这一步只在时间轴上出现一次，不再单独占一�
   })));
   running.click(byClass("dws-chip"));
   assert.equal(collect(running.tree, byClass("dws-progress")).length, 0, "步级不再单独占一行");
-  assert.match(textOf(running.tree), /本步|读文件|跑测试|写文件|查看|打开|执行/, "时间轴里仍能看到这一步");
+  assert.match(textOf(running.tree), /本步|看文件|运行测试|写入文件|查看|读网页|运行命令/, "时间轴里仍能看到这一步");
 
   const waiting = mount(props(activity({ startedAt: NOW - 8000, stepSig: "", stepStartAt: 0 })));
   waiting.click(byClass("dws-chip"));
@@ -882,7 +882,7 @@ test("node -e 内联脚本：不把脚本正文里的 const、require、copy 当
   const view = mount(props({ items, phase: "done" }));
   view.click(byClass("dws-chip"));
   const text = view.text();
-  assert.match(text, /跑 Node 脚本/);
+  assert.match(text, /运行 Node/);
   assert.doesNotMatch(text, /复制\/移动文件/);
   assert.doesNotMatch(text, /Node 脚本\s*const/);
 });
@@ -945,7 +945,7 @@ test("行内先写看得懂的动作，宿主说明只进悬停与展开", async
   view.click(byClass('dws-chip'));
   const rowText = view.text();
   assert.doesNotMatch(rowText, /Check version field consistency and usage/, "行内不摆英文说明");
-  assert.match(rowText, /找代码|执行命令|跑脚本|跑测试/, "行内要有人话动作");
+  assert.match(rowText, /搜代码|运行命令|运行脚本|运行测试/, "行内要有人话动作");
   const row = collect(view.tree, byClass("dws-row"))[0];
   assert.match(String(row && row.props && row.props.title || ""), /Check version field consistency/, "悬停仍能看到说明");
 });
@@ -1015,7 +1015,7 @@ test("动作对象按目录职责与扩展名归类，认不出的仍写文件�
   view.click(byClass("dws-chip"));
   const text = view.text();
   assert.match(text, /文档 guide/, "文档目录按职责归类");
-  assert.match(text, /跑测试s*unknown-thing/, "测试目录按职责归类（命令里只剩文件名也认得出，且不重复“测试”）");
+  assert.match(text, /运行测试\s*unknown-thing/, "测试目录按职责归类（命令里只剩文件名也认得出，且不重复“测试”）");
   assert.match(text, /样式 theme/, "样式目录按职责归类");
 
   const odd = mount(props({ items: [call("read", "weird-blob.bin", "ok")], counts: { steps: 1, tools: 1, errors: 0 } }));
@@ -1037,7 +1037,7 @@ test("外部工具名里写着要干什么：认得全就念成人话，缺一�
   const targets = collect(view.tree, byClass("target")).map(textOf);
   assert.deepEqual(verbs.slice(0, 3), ["读", "新建", "读"], "动词按词表念");
   assert.deepEqual(targets.slice(0, 3), ["议题", "合并请求", "文件"], "对象按词表念");
-  assert.ok(verbs.includes("用外部工具"), "有词不认识就不硬翻");
+  assert.ok(verbs.includes("调用外部工具"), "有词不认识就不硬翻");
   assert.ok(targets.includes("fetch widget"), "退回原名，仍看得出调了什么");
 });
 
@@ -1344,7 +1344,7 @@ async function glossAfterOpen(item) {
 test("点开一步能看到那句大白话；解释跟着动作走，不是同一句", async () => {
   const gloss = await glossAfterOpen(call("ops_bash", "node --test tests/x.test.mjs", "ok"));
   assert.equal(gloss.length, 1);
-  assert.match(gloss[0], /自动检查/, "跑测试要解释成「验证改动没弄坏别的」");
+  assert.match(gloss[0], /自动检查/, "运行测试要解释成「验证改动没弄坏别的」");
 
   const other = await glossAfterOpen(call("ops_bash", "git diff --stat", "ok"));
   assert.equal(other.length, 1);
@@ -1394,7 +1394,7 @@ test("进行中的那一步当场出现在最上面：不跟刚跑完的行一�
 
     const now = rows();
     assert.equal(now.length, 4, "有工具在跑：四行历史，卡片不许撑高");
-    assert.match(now[0], /跑测试/, "正在跑的那步必须当场在最上面，不许被排队藏到下面");
+    assert.match(now[0], /运行测试/, "正在跑的那步必须当场在最上面，不许被排队藏到下面");
     assert.doesNotMatch(now.join(""), /zeta/, "刚跑完的普通步该排队让位，不能抢");
   } finally {
     Date.now = realNow;

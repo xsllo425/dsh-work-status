@@ -26,7 +26,7 @@
 
 | 文件 | 用途 |
 |---|---|
-| `docs/screenshots/panel-demo.gif` | 首屏动图（6 帧：思考中 → 跑测试进行中 → 失败未恢复 → 同一目标重试成功、旧行划掉转灰 → 进度推进），README 首屏与插件市场提交用 |
+| `docs/screenshots/panel-demo.gif` | 首屏动图（6 帧：思考中 → 运行测试进行中 → 失败未恢复 → 同一目标重试成功、旧行划掉转灰 → 进度推进），README 首屏与插件市场提交用 |
 | `docs/screenshots/real-panel-redacted.png` | 真机截图（侧栏与对话已打码），README 与 PPT 用 |
 | `docs/screenshots/panel-dark.png` | 深色档渲染图，README 第二张 |
 | `docs/dsh-work-status-intro.pptx` | 7 页介绍，发版或演示用 |

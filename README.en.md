@@ -26,8 +26,8 @@ Open it:
 目标  按你定的方案改：固定右下浮窗、行内展开、圆环状态点…
 推理 6m35s · 工具 13s · 压缩 16 次 失败 3
 确定 3/4 · 75%（按当前清单）
-○ 跑测试    tests/client-render.test.mjs                    362ms
-● 改文件    lib/client.js                                    1.2s
+○ 运行测试  tests/client-render.test.mjs                    362ms
+● 修改文件  lib/client.js                                    1.2s
 ✗ 压缩上下文 m00301–m00356 · 省 ~…                  未恢复  27ms
   没压成：范围已失效，本次没有新增压缩块
 展开本轮历史 · 37 步 ⌄
@@ -51,7 +51,7 @@ Open it:
 - **Goal and current problem** — the user's request and the sub-problem the agent is on, each clamped and expandable.
 - **Three separate clocks** — model reasoning, tool calls, context compression. They are never merged into one "elapsed" number, and per-step cost is broken down by category (local / network / background) instead of one opaque duration.
 - **Progress only when it is real** — a percentage exists only when the agent keeps a todo list (`确定 3/4 · 75%`, labelled *per current list*). Otherwise that line is simply not drawn; it never extrapolates a whole-turn ETA.
-- **Every action in plain words** — `跑测试`, `改文件`, `压缩上下文`, with target and duration. A failure is tagged *未恢复* or *已恢复* (a later success on the same target) and, when the error is recognisable, explained in one sentence instead of a stack trace.
+- **Every action in plain words** — `运行测试`, `修改文件`, `压缩上下文`, with target and duration. A failure is tagged *未恢复* or *已恢复* (a later success on the same target) and, when the error is recognisable, explained in one sentence instead of a stack trace.
 - **Context maintenance as normal rows** — compress / decompress / search appear inline with tool rows, so you see where they happened; they do not inflate step counts.
 - **Previous turn** — the last turn folds into one row under a divider, so the card still answers "what did it just do?" after a turn ends.
 - **Session log** — turns, steps, tool calls, per-turn reasoning/tool time, compression count and failures, last 24 turns, copyable as text.
