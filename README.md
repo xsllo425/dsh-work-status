@@ -173,4 +173,4 @@ docs/               HANDOFF.md、RESEARCH-COMMUNITY.md、STATS.md
 
 ## 许可
 
-MIT。部分代码派生自 [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0（MIT），见 [NOTICE](NOTICE)。
+MIT，见 [LICENSE](LICENSE)。最初分叉自 oxygenforce 的 [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0，"把会话日志折叠成输入框上方一条状态"的思路来自它；0.13.0 起代码已全部改写，不再包含它的代码，见 [NOTICE](NOTICE)。

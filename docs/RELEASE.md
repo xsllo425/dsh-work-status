@@ -89,7 +89,7 @@ awk '/^## 安装/,/^## 更新/' README.md | grep -A3 '^```bash'
 ## 10. 仓库元数据（偶尔核对）
 
 - `package.json`：`author`、`repository`、`homepage`、`bugs`、`keywords`、`license: MIT`
-- `LICENSE`（MIT）与 `NOTICE`（源自 `dsh-agent-activity` 0.9.0）都在
+- `LICENSE`（MIT）与 `NOTICE`（致谢 `dsh-agent-activity`：最初从它分叉，0.13.0 起代码已全部改写）都在
 - GitHub topics：`dsh-plugin`、`deepseek-harness`、`dsh`、`plugin`
 - npm 上有正式版本（插件中心可直接装）；GitHub / 本地目录 / tarball 三种装法照旧可用
 

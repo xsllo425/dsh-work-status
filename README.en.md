@@ -174,4 +174,4 @@ This plugin was written with help from several AI assistants. The list comes fro
 
 ## License
 
-MIT. Derived in part from [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0 (MIT); see [NOTICE](NOTICE).
+MIT; see [LICENSE](LICENSE). This plugin started as a fork of [dsh-agent-activity](https://github.com/oxygenforce/dsh-agent-activity) 0.9.0 by oxygenforce, whose idea of folding the session log into one status line above the composer inspired it. Since 0.13.0 the code has been rewritten and no longer contains code from that project; see [NOTICE](NOTICE).
