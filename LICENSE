@@ -1,6 +1,9 @@
 MIT License
 
-Copyright (c) 2026 oxygenforce
+Copyright (c) 2026 xsllo425
+
+Portions derived from dsh-agent-activity 0.9.0, Copyright (c) 2026 oxygenforce,
+licensed under the MIT License (see NOTICE).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
