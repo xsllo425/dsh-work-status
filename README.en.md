@@ -50,6 +50,7 @@ Open it:
 - **One line by default** — current step plus elapsed time while working; completed step count when idle. Nothing floats over the conversation.
 - **Goal and current problem** — the user's request and the sub-problem the agent is on, each clamped and expandable.
 - **Three separate clocks** — model reasoning, tool calls, context compression. They are never merged into one "elapsed" number, and per-step cost is broken down by category (local / network / background) instead of one opaque duration.
+- **Waiting on you does not count as work time** — while it is waiting for your answer or your approval, that stretch is subtracted from the elapsed time, and the log shows it separately as `waiting N`.
 - **Progress only when it is real** — a percentage exists only when the agent keeps a todo list (`确定 3/4 · 75%`, labelled *per current list*). Otherwise that line is simply not drawn; it never extrapolates a whole-turn ETA.
 - **Every action in plain words** — `运行测试`, `修改文件`, `压缩上下文`, with target and duration. A failure is tagged *未恢复* or *已恢复* (a later success on the same target) and, when the error is recognisable, explained in one sentence instead of a stack trace.
 - **Context maintenance as normal rows** — compress / decompress / search appear inline with tool rows, so you see where they happened; they do not inflate step counts.
@@ -121,7 +122,7 @@ To show "usually 3–8s" on the very first turns of a new session, the plugin re
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 132 tests, no dependencies
+node --test tests/*.test.mjs          # 141 tests, no dependencies
 node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
 ```
 
@@ -129,7 +130,7 @@ There are no runtime or dev dependencies; tests run on plain Node 24.
 
 ```
 lib/index.js        host entry — registers the session projection
-lib/activity.js     pure event fold (stateVersion 19, key "workStatus")
+lib/activity.js     pure event fold (stateVersion 21, key "workStatus")
 lib/client.js       web UI: chip, panel, timeline, log, dictionaries, CSS
 locale/*.json       plugin-list metadata (zh/en)
 icon.svg            plugin icon

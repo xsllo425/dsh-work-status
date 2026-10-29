@@ -311,6 +311,12 @@ test("长时间没有新事件：有工具在跑只标那一行，没在飞才�
   assert.deepEqual(quietTags(waiting), []);
   assert.deepEqual(headFlags(waiting), []);
 
+  // 等审批：挂起账上记着在等人，没有 ask 那一行也不许说没动静。
+  const approving = mount(props({ updatedAt: NOW - 60000, pauseAt: NOW - 50000, pauseKind: "approval" }));
+  approving.click(byClass("dws-chip"));
+  assert.deepEqual(quietTags(approving), []);
+  assert.deepEqual(headFlags(approving), []);
+
   // 刚有事件：什么都不说。
   const fresh = mount(props({ updatedAt: NOW - 1000 }));
   fresh.click(byClass("dws-chip"));
@@ -1430,4 +1436,46 @@ test("轮询一时失败：已经在跑的下载条不许清空闪没", async ()
   } finally {
     globalThis.setTimeout = realSetTimeout;
   }
+});
+
+
+// ── 等人回答的时间不算工期 ────────────────────────────────────────────────
+
+test("徽标上的已用时扣掉等人回答的那一段", async () => {
+  const mount = await loadBadge();
+  // 现算起点：NOW 是模块加载时取的，跑到这里已经过去几百毫秒，会把 15 秒漂成 16 秒。
+  const view = mount(props({ startedAt: Date.now() - 60000, pauseMs: 45000 }));
+  const chips = collect(view.tree, byClass("dws-chip"));
+  assert.equal(chips.length, 1);
+  assert.match(textOf(chips[0]), /15s/, "墙上 60 秒，等人 45 秒，只报 15 秒");
+});
+
+test("正挂着的那段也扣：等审批等了一个小时，用时也不会一直涨", async () => {
+  const mount = await loadBadge();
+  const at = Date.now();
+  const view = mount(props({ startedAt: at - 60000, pauseAt: at - 30000, pauseKind: "approval" }));
+  const chips = collect(view.tree, byClass("dws-chip"));
+  assert.match(textOf(chips[0]), /30s/);
+});
+
+test("日志里分开写：干活的合计与等人的时长各一项", async () => {
+  const mount = await loadBadge();
+  const totals = { turns: 1, rounds: 2, ops: 3, errors: 0, ctx: 0, ctxFailed: 0, modelMs: 4000, toolMs: 1000, wallMs: 90000, activeMs: 30000, pauseMs: 60000, firstAt: NOW - 90000, lastAt: NOW };
+  const view = mount(props({ phase: "done", endedAt: NOW, startedAt: NOW - 90000, totals, history: [] }));
+  view.click(byClass("dws-chip"));
+  view.click(byClass("dws-log-toggle"));
+  const text = view.text();
+  assert.match(text, /合计 30s/, "合计报的是干活的 30 秒，不是墙上的 90 秒");
+  assert.match(text, /等人 1m/, "等人的时长单独列一行");
+});
+
+test("整轮都在等人：合计报 0ms，不能退回墙上时间", async () => {
+  const mount = await loadBadge();
+  const totals = { turns: 1, rounds: 1, ops: 1, errors: 0, ctx: 0, ctxFailed: 0, modelMs: 0, toolMs: 0, wallMs: 60000, activeMs: 0, pauseMs: 60000, firstAt: NOW - 60000, lastAt: NOW };
+  const view = mount(props({ phase: "done", endedAt: NOW, startedAt: NOW - 60000, totals, history: [] }));
+  view.click(byClass("dws-chip"));
+  view.click(byClass("dws-log-toggle"));
+  const text = view.text();
+  assert.match(text, /合计 0ms/, "全程等人，干活时长就是 0，不是墙上的 1 分钟");
+  assert.match(text, /等人 1m/);
 });

@@ -34,7 +34,7 @@ const asked = (time, value, source = { kind: "user" }) =>
 test("投影登记在 workStatus 键下，版本号与线上视图都在", () => {
   assert.equal(ACTIVITY_KEY, "workStatus");
   assert.equal(activityProjection.key, ACTIVITY_KEY);
-  assert.equal(activityProjection.stateVersion, 20);
+  assert.equal(activityProjection.stateVersion, 21);
   assert.equal(typeof activityProjection.stateSchema.parse, "function");
   const blank = emptyState();
   assert.strictEqual(activityProjection.wire.view(blank), blank, "线上视图原样转发记录");
@@ -496,4 +496,72 @@ test("老形态数据：data.isError / data.text 也要认", () => {
     at("tool/result", 2100, { turn: 1, step: 1, callId: "c9", isError: true, text: "disk full" }),
   ]);
   assert.equal(state.items[0].status, "error");
+});
+
+
+
+// ── 等人回答的时间不算工期 ────────────────────────────────────────────────
+
+/** 记日志的时刻从 1000 起：0 在记录里是“还没开始”的哨兵。 */
+const T0 = 1000;
+
+test("问用户之后到回答回来：这段不算这一轮的工期", () => {
+  const state = play([
+    at("turn/start", T0, { turn: 1 }),
+    at("tool/call", T0 + 1000, { callId: "a1", name: "ask_user_question", arguments: "{}" }),
+    at("tool/result", T0 + 61000, { message: { toolCallId: "a1" } }),
+    at("turn/end", T0 + 62000, { reason: { kind: "completed" } }),
+  ]);
+  assert.equal(state.pauseMs, 60000, "挂起的那 60 秒记在挂起账上");
+  assert.equal(state.activeMs, 2000, "真正干活的只有前后两秒");
+  assert.equal(state.totals.wallMs, 62000, "墙上时间照记，不篡改");
+  assert.equal(state.totals.activeMs, 2000);
+  assert.equal(state.totals.pauseMs, 60000);
+  assert.equal(state.history.at(-1).activeMs, 2000);
+});
+
+test("等审批同样不算工期，点头之后立刻接着算", () => {
+  const state = play([
+    at("turn/start", T0, { turn: 1 }),
+    at("approval/asked", T0 + 500, { id: "ap1", toolName: "ops_bash" }),
+    at("approval/decided", T0 + 9500, { id: "ap1", outcome: "approved" }),
+    at("turn/end", T0 + 10000, { reason: { kind: "completed" } }),
+  ]);
+  assert.equal(state.activeMs, 1000);
+  assert.equal(state.pauseMs, 9000);
+});
+
+test("两件事同时在等：只算一次，不重复累加", () => {
+  const state = play([
+    at("turn/start", T0, { turn: 1 }),
+    at("approval/asked", T0 + 1000, { id: "ap1", toolName: "ops_bash" }),
+    at("tool/call", T0 + 2000, { callId: "a1", name: "ask_user_question", arguments: "{}" }),
+    at("approval/decided", T0 + 5000, { id: "ap1", outcome: "approved" }),
+    at("tool/result", T0 + 11000, { message: { toolCallId: "a1" } }),
+    at("turn/end", T0 + 11000, { reason: { kind: "completed" } }),
+  ]);
+  assert.equal(state.pauseMs, 10000, "从第一件开始等算到最后一件结束");
+  assert.equal(state.activeMs, 1000);
+});
+
+test("等到一半这一轮被打断：还开着的那段也结账，不留悬空时间", () => {
+  const state = play([
+    at("turn/start", T0, { turn: 1 }),
+    at("tool/call", T0 + 1000, { callId: "a1", name: "ask_user_question", arguments: "{}" }),
+    at("turn/end", T0 + 31000, { reason: { kind: "interrupted" } }),
+  ]);
+  assert.equal(state.pauseAt, 0, "结束后不再挂着");
+  assert.equal(state.pauseMs, 30000);
+  assert.equal(state.activeMs, 1000);
+});
+
+test("没在等谁的时候，activeMs 就是墙上时间", () => {
+  const state = play([
+    at("turn/start", T0, { turn: 1 }),
+    at("tool/call", T0 + 1000, { callId: "r1", name: "read", arguments: "{}" }),
+    at("tool/result", T0 + 3000, { message: { toolCallId: "r1" } }),
+    at("turn/end", T0 + 4000, { reason: { kind: "completed" } }),
+  ]);
+  assert.equal(state.pauseMs, 0);
+  assert.equal(state.activeMs, 4000);
 });

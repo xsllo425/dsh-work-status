@@ -47,6 +47,7 @@
 - **默认一行**：干活时显示当前动作与已用时，结束后显示本轮完成步数；不往对话区上浮任何卡片。
 - **目标与当前问题**：你提的要求、它正在处理的小问题，各自截断并可展开。
 - **三个分开的时钟**：模型推理、工具调用、上下文压缩各自计时，不合并成一个“已用时”；单步耗时按类别（本地 / 网络 / 后台）拆开，不是一笔糊账。
+- **等人的时间不算工期**：向你提问、等你点头审批的这段时间，会从「已用时」里扣掉，日志里单独写成「等人 N」；自己去泡杯茶回来，卡片上的用时也不会白涨。
 - **只在有真实数据时给进度**：agent 维护 todo 清单时才显示百分比（`确定 3/4 · 75%`，并注明“按当前清单”）；没有清单就不画那一行，不对整轮外推 ETA。
 - **每个动作都说人话**：`运行测试`、`修改文件`、`压缩上下文`，带目标与耗时。失败标 `未恢复` 或 `已恢复`（同一目标后来成功），能识别时直接给一句人话，不甩栈。
 - **上下文维护按普通记录排**：压缩 / 恢复 / 检索与工具行按时间排在一起，能看出它插在哪一步，又不虚增步数。
@@ -119,7 +120,7 @@ dsh plugin --profile web add dsh-work-status
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 132 项，无任何依赖
+node --test tests/*.test.mjs          # 141 项，无任何依赖
 node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、语言包
 ```
 
@@ -127,7 +128,7 @@ node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、�
 
 ```
 lib/index.js        宿主入口，注册会话投影
-lib/activity.js     纯事件折叠（stateVersion 19，投影键 "workStatus"）
+lib/activity.js     纯事件折叠（stateVersion 21，投影键 "workStatus"）
 lib/client.js       Web UI：徽标、面板、时间轨、日志、双语文案、样式
 locale/*.json       插件列表里的名称与简介（中/英）
 icon.svg            插件图标

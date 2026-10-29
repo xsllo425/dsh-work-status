@@ -34,7 +34,7 @@
 export const ACTIVITY_KEY = "workStatus";
 export const activityProjection = {
   key: ACTIVITY_KEY,
-  stateVersion: 19,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
+  stateVersion: 21,          // 改 state 形状必须 +1，旧 checkpoint 会被丢弃重放
   stateSchema: plainSchema,  // 宽松 schema
   init: () => EMPTY,
   apply: (state, event) => applyEvent(state, event),
@@ -43,7 +43,7 @@ export const activityProjection = {
 ```
 
 - `applyEvent(state, event)` 必须是同步纯函数，且对无关事件返回**同一个引用**（宿主据此跳过广播）；不允许读环境、写文件、发网络
-- 事件来自会话日志，字段以真实日志为准（`type`、`seq`、`time`、`data`）；当前消费：`turn/start`、`turn/end`、`step/start`、`step/end`、`assistant/message`、`tool/call`、`tool/result`、`todo/write`、`user/message`、`compaction/*`
+- 事件来自会话日志，字段以真实日志为准（`type`、`seq`、`time`、`data`）；当前消费：`turn/start`、`turn/end`、`step/start`、`step/end`、`assistant/message`、`tool/call`、`tool/result`、`todo/write`、`user/message`、`approval/asked`、`approval/decided`、`compaction/*`
 - 客户端不计算业务，只渲染：进度、耗时、失败归属都应在折叠层算好
 
 ### state 主要字段
@@ -59,9 +59,11 @@ export const activityProjection = {
 | `stepStats` | 按步签名归档的耗时样本（`model|sig`、`tool|cat|sig`，各最多 30 条）；签名 = 工具名，命令类工具细分为 `ops_bash:test`、`ops_bash:git`、`ops_bash:script` 等 |
 | `modelMs` / `stepModelDone` | 本轮模型推理合计：每步 `step/start` → 该步 `assistant/message`（真实日志里每步恰好一条，在输出完成时落地）；`stepModelDone` 标记本步已记 |
 | `toolMs` / `toolOpen` / `toolSince` | 本轮工具占用合计：所有调用（含上下文维护）时间的并集，并行重叠只算一次；客户端对进行中的部分补到当前时刻 |
+| `pauseMs` / `pauseAt` / `pauseKind` / `pauseOpen` | 等人账：已累计的挂起时长、当前这段的起点（0 = 没在等）、在等谁（`ask` / `approval`）、还开着的原因列表。提问由 `tool/call` 开、结果回来关；审批由 `approval/asked` 开、`approval/decided` 关；`turn/end` 把还开着的截到结束时刻。同时开着只按并集计时 |
+| `activeMs` | 本轮真正干活的时长 = 墙上时间 − 等人时长；`turn/end` 时结算，客户端进行中用 `activeElapsed` 现算 |
 | `decision*` / `stall` | 决策回合统计与低收益计数 |
-| `history` | 最近 24 轮（`HISTORY_TURNS`）逐轮记录：`turn`、`startedAt`、`endedAt`、`wallMs`、`rounds`（模型回合，= DSH 状态栏的“步”）、`steps`（成功工具调用）、`ops`、`errors`、`modelMs`、`toolMs`、`ctx`、`prompt`（截 80 字）、`phase`；ETA 也读它 |
-| `totals` | 会话从头累计：`turns`、`rounds`、`steps`、`ops`、`errors`、`ctx`、`ctxFailed`、`modelMs`、`toolMs`、`wallMs`、`firstAt`、`lastAt`（日志视图用） |
+| `history` | 最近 24 轮（`HISTORY_TURNS`）逐轮记录：`turn`、`startedAt`、`endedAt`、`wallMs`、`activeMs`、`pauseMs`、`rounds`（模型回合，= DSH 状态栏的“步”）、`steps`（成功工具调用）、`ops`、`errors`、`modelMs`、`toolMs`、`ctx`、`prompt`（截 80 字）、`phase`；ETA 也读它 |
+| `totals` | 会话从头累计：`turns`、`rounds`、`steps`、`ops`、`errors`、`ctx`、`ctxFailed`、`modelMs`、`toolMs`、`wallMs`、`activeMs`、`pauseMs`、`firstAt`、`lastAt`（日志视图用） |
 | `turnCtx` | 本轮上下文维护总账：`n`（次数）、`saved`（省下的 token）、`fails`（失败数），不受显示窗口截断 |
 | `prev` | 上一轮快照：`turn`、`prompt`、起止、`steps`、`errors`、`modelMs`、`toolMs`、`items`、`ctx`（那一轮的上下文维护操作） |
 
