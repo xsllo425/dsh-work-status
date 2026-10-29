@@ -159,3 +159,27 @@ test("场景 7：子代理在独立会话里计，不与主 Agent 重复累计",
   assert.equal(mainState.decisionCounts.decisions, 1);
   assert.notEqual(mainState.decisions[0].tools[0].label, childState.decisions[0].tools[0].label);
 });
+
+test("长步骤：动作条被截断后仍认得这一步的动作，不再退化成空窗口", () => {
+  // 32 条是动作条的上限：先塞满，再让第 33 条落在新的一步里。
+  const filler = [];
+  for (let i = 1; i <= 32; i++) {
+    filler.push(call("f" + i, "read_file", { path: "filler" + i + ".md" }, 100 + i * 2), done("f" + i, "ok", 101 + i * 2));
+  }
+  const state = fold([
+    turnStart(),
+    stepStart(1, 100),
+    ...filler,
+    stepStart(2, 200),
+    call("w1", "write_file", { path: "lib/real.js" }, 210),
+    done("w1", "written", 220),
+    stepStart(3, 300),
+    turnEnd(400),
+  ]);
+
+  assert.equal(state.items.length, 32, "动作条本身仍按上限截断");
+  const record = state.decisions.at(-1);
+  assert.deepEqual([...record.wrote], ["lib/real.js"], "被截断后仍要认出这一步写了什么");
+  assert.equal(record.outcome, "pending");
+  assert.equal(state.decisionCounts.unknown, 0, "不该因为窗口空了而记成无法判断");
+});

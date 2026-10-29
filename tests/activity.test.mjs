@@ -34,7 +34,7 @@ const asked = (time, value, source = { kind: "user" }) =>
 test("投影登记在 workStatus 键下，版本号与线上视图都在", () => {
   assert.equal(ACTIVITY_KEY, "workStatus");
   assert.equal(activityProjection.key, ACTIVITY_KEY);
-  assert.equal(activityProjection.stateVersion, 21);
+  assert.equal(activityProjection.stateVersion, 22);
   assert.equal(typeof activityProjection.stateSchema.parse, "function");
   const blank = emptyState();
   assert.strictEqual(activityProjection.wire.view(blank), blank, "线上视图原样转发记录");
@@ -386,6 +386,22 @@ test("结果一定结账：条目被挤出显示窗口，工具账也不再挂�
   assert.equal(state.phase, "thinking");
   assert.ok(state.toolMs > 0, "工具耗时要算进来");
   assert.equal(state.counts.steps, 40);
+});
+
+test("结果的 callId 只放在 message.source 里也能结账", () => {
+  // 真实日志里有一半的 tool/result 不带 message.toolCallId，只在来源里放了 callId。
+  // 只认前者的话，这些调用会永远停在“运行中”，后面的决策结算就看不出发生了什么。
+  const state = play([
+    at("turn/start", 1000, { turn: 1 }),
+    at("step/start", 1000, { turn: 1, step: 1 }),
+    at("tool/call", 1100, { turn: 1, step: 1, callId: "s1", name: "write", arguments: '{"path":"lib/a.js"}' }),
+    at("tool/result", 1800, { turn: 1, step: 1, message: { role: "tool", source: { kind: "tool", callId: "s1" }, content: [] } }),
+    at("step/start", 2000, { turn: 1, step: 2 }),
+  ]);
+  assert.equal(state.items[0].status, "ok", "只在来源里给 id 也要认成已完成");
+  const record = state.decisions.at(-1);
+  assert.deepEqual([...record.wrote], ["lib/a.js"], "写动作被认出来，不该退化成无法判断");
+  assert.equal(record.outcome, "pending");
 });
 
 test("重复的 turn/end 不会重复结算：历史只记一条，结束时刻不变", () => {
