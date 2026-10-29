@@ -120,7 +120,7 @@ dsh plugin --profile web add dsh-work-status
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 143 项，无任何依赖
+node --test tests/*.test.mjs          # 149 项，无任何依赖
 node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、语言包
 ```
 

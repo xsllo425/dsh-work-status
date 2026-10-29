@@ -1479,3 +1479,76 @@ test("整轮都在等人：合计报 0ms，不能退回墙上时间", async () =
   assert.match(text, /合计 0ms/, "全程等人，干活时长就是 0，不是墙上的 1 分钟");
   assert.match(text, /等人 1m/);
 });
+
+// ── 决策引擎的结论落到界面上 ──────────────────────────────────────────────
+
+/** 只看结论标签：慢、重试、静默那些标签各有各的测试，别混进来。 */
+function verdictTags(view) {
+  return collect(view.tree, (node) => typeof node.props?.["data-kind"] === "string" && node.props["data-kind"].startsWith("verdict-")).map(textOf);
+}
+
+test("行上标出这一步换来了什么：改并验过就写「验过了」", async () => {
+  const mount = await loadBadge();
+  const items = [call("edit", "lib/client.js", "ok", { step: 2 })];
+  const decisions = [{ turn: 3, step: 2, outcome: "progress", reasons: ["改了 lib/client.js，并在本步验证"], wrote: ["lib/client.js"], verified: 1 }];
+  const view = mount(props({ items, decisions }));
+  view.click(byClass("dws-chip"));
+  assert.deepEqual(verdictTags(view), ["验过了"]);
+});
+
+test("改了没验的行写「还没验」，理由是「结果还没验证」", async () => {
+  const mount = await loadBadge();
+  const items = [call("edit", "lib/a.js", "ok", { step: 4 })];
+  const decisions = [{ turn: 3, step: 4, outcome: "pending", reasons: ["改了 lib/a.js，结果还没验证"], wrote: ["lib/a.js"], verified: 0 }];
+  const view = mount(props({ items, decisions }));
+  view.click(byClass("dws-chip"));
+  assert.deepEqual(verdictTags(view), ["还没验"]);
+});
+
+test("说不清的那一步不加标签：七成步骤都是 unknown，标满等于没标", async () => {
+  const mount = await loadBadge();
+  const items = [call("read", "lib/client.js", "ok", { step: 5 })];
+  const decisions = [{ turn: 3, step: 5, outcome: "unknown", reasons: ["依据不足"], wrote: [], verified: 0 }];
+  const view = mount(props({ items, decisions }));
+  view.click(byClass("dws-chip"));
+  assert.deepEqual(verdictTags(view), []);
+});
+
+test("别人那一轮的结论不许挂到这一轮的行上", async () => {
+  const mount = await loadBadge();
+  const items = [call("edit", "lib/client.js", "ok", { step: 2 })];
+  const decisions = [{ turn: 2, step: 2, outcome: "progress", reasons: ["上一轮的结论"], wrote: ["lib/client.js"], verified: 1 }];
+  const view = mount(props({ items, decisions }));
+  view.click(byClass("dws-chip"));
+  assert.deepEqual(verdictTags(view), []);
+});
+
+test("改了五处却一次没验：标题旁点破，别等人自己发现", async () => {
+  const mount = await loadBadge();
+  const decisions = [
+    { turn: 3, step: 1, outcome: "pending", reasons: [], wrote: ["lib/a.js"], verified: 0 },
+    { turn: 3, step: 2, outcome: "pending", reasons: [], wrote: ["lib/b.js"], verified: 0 },
+    { turn: 3, step: 3, outcome: "pending", reasons: [], wrote: ["lib/c.js"], verified: 0 },
+    { turn: 3, step: 4, outcome: "pending", reasons: [], wrote: ["lib/d.js"], verified: 0 },
+    { turn: 3, step: 5, outcome: "pending", reasons: [], wrote: ["lib/e.js"], verified: 0 },
+  ];
+  const view = mount(props({ decisions }));
+  view.click(byClass("dws-chip"));
+  const flags = collect(view.tree, (node) => node.type === "span" && node.props && node.props["data-kind"] === "unverified");
+  assert.equal(flags.length, 1);
+  assert.match(textOf(flags[0]), /改了 5 处，还没验/);
+});
+
+test("改得再多，只要验过一次，就不点破", async () => {
+  const mount = await loadBadge();
+  const decisions = [
+    { turn: 3, step: 1, outcome: "progress", reasons: [], wrote: ["lib/a.js"], verified: 1 },
+    { turn: 3, step: 2, outcome: "pending", reasons: [], wrote: ["lib/b.js"], verified: 0 },
+    { turn: 3, step: 3, outcome: "pending", reasons: [], wrote: ["lib/c.js"], verified: 0 },
+    { turn: 3, step: 4, outcome: "pending", reasons: [], wrote: ["lib/d.js"], verified: 0 },
+    { turn: 3, step: 5, outcome: "pending", reasons: [], wrote: ["lib/e.js"], verified: 0 },
+  ];
+  const view = mount(props({ decisions }));
+  view.click(byClass("dws-chip"));
+  assert.equal(collect(view.tree, (node) => node.type === "span" && node.props && node.props["data-kind"] === "unverified").length, 0);
+});
