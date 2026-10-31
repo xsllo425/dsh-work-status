@@ -53,7 +53,7 @@
 - **上下文维护按普通记录排**：压缩 / 恢复 / 检索与工具行按时间排在一起，能看出它插在哪一步，又不虚增步数。
 - **上一轮**：上一轮折叠成一行放在分割线下，轮次结束后卡片仍能回答“刚做了什么”。
 - **会话日志**：轮次、步数、调用次数、每轮推理/工具用时、压缩次数与失败、最近 24 轮，可一键复制成纯文本。
-- **下载进度**（可选）：本机若装了写状态的下载器（状态在 `~/.agent-downloads/jobs/`），卡片会多一块「下载」——文件名、百分比、速度、剩余时间、当前阶段，最多列 4 条；进程已经不在却还写着「下载中」的标成中断，不假装在跑。没有那个目录就什么都不画。读写契约见 [docs/DOWNLOAD-STATUS-SPEC.md](docs/DOWNLOAD-STATUS-SPEC.md)：任何按这份约定写 `status.json` 的下载器都能接上，卡片本身不下载、不取消。
+- **下载进度**（可选）：本机若装了写状态的下载器（状态在 `~/.agent-downloads/jobs/`），卡片会多一块「下载」——文件名、百分比、速度、剩余时间、当前阶段，最多列 4 条；进程已经不在却还写着「下载中」的标成中断，不假装在跑。跑完的行只在本轮露个脸，这一轮一收就跟着走，不会一直挂在卡片上；正在下的不看轮次。没有那个目录就什么都不画。读写契约见 [docs/DOWNLOAD-STATUS-SPEC.md](docs/DOWNLOAD-STATUS-SPEC.md)：任何按这份约定写 `status.json` 的下载器都能接上，卡片本身不下载、不取消。
 - **看不懂的步骤点开有大白话**：把一步展开，下面多一行解释这步在干什么（「运行测试 = 验证改动没弄坏别的」）。按动作类型给解释，词典里没有的工具就不加这行。
 
 ## 刻意不做的事
@@ -120,7 +120,7 @@ dsh plugin --profile web add dsh-work-status
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 149 项，无任何依赖
+node --test tests/*.test.mjs          # 153 项，无任何依赖
 node scripts/check-manifest.mjs       # 清单、导出、补丁行、图标、语言包
 ```
 

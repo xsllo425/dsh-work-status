@@ -1207,6 +1207,12 @@ test("没有主题也没有吉祥物：照旧马上画徽标", async () => {
 
 // ── 下载进度 ─────────────────────────────────────────────────────────────────
 
+/** 一条真在跑的下载；后面几处用例共用。 */
+const RUNNING_JOB = {
+  id: "d9", status: "running", phase: "downloading",
+  totalBytes: 10000000, receivedBytes: 4000000, speedBps: 2000000, filename: "big.bin",
+};
+
 /** 一帧里的异步 tick 走完：fetch 的 promise 链至少两个微任务。 */
 async function flushMicrotasks(times = 5) {
   for (let i = 0; i < times; i += 1) await Promise.resolve();
@@ -1265,13 +1271,83 @@ test("下载进程没了却还写着下载中：标成中断，不假装在跑",
 });
 
 test("下载区最多列四条：卡片是概览，不是下载管理器", async () => {
-  const jobs = Array.from({ length: 8 }, (_v, i) => ({ id: "j" + i, status: "done", phase: "done", filename: "f" + i + ".bin", totalBytes: 10, receivedBytes: 10 }));
+  // 本轮里跑完的才看得见，所以时间戳要落在本轮之内（activity 默认本轮开始于 60 秒前）。
+  const jobs = Array.from({ length: 8 }, (_v, i) => ({
+    id: "j" + i, status: "done", phase: "done", filename: "f" + i + ".bin",
+    totalBytes: 10, receivedBytes: 10, finishedAt: new Date(NOW - 30000).toISOString(),
+  }));
   const mount = await loadBadge({ fetch: fakeFetch({ jobs }) });
   const view = mount(props());
   await flushMicrotasks();
   view.rerender();
   view.click(byClass("dws-chip"));
   assert.equal(collect(view.tree, byClass("dws-dl")).length, 4);
+});
+
+test("刚打开页面、没有进行中的轮次：终态一条都不画（那全是历史）", async () => {
+  const oldMission = {
+    id: "cold", status: "done", phase: "done", filename: "前天.exe",
+    totalBytes: 10, receivedBytes: 10,
+    startedAt: new Date(NOW - 86400000).toISOString(),
+    updatedAt: new Date(NOW - 86300000).toISOString(),
+  };
+  // 换会话/刷新后的首帧：activity 还是空的，没有 startedAt，也没有轮次。
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [oldMission] }) });
+  const view = mount(props({ phase: "idle", turn: 0, startedAt: 0 }));
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(view.tree, null, "空态下连卡片都不该出来");
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 0);
+});
+
+test("昨天跑完的下载不会再挂到今天的卡片上：终态只属于它结束的那一轮", async () => {
+  const staleDone = {
+    id: "old", status: "done", phase: "done", filename: "昨天.exe",
+    totalBytes: 10, receivedBytes: 10,
+    startedAt: new Date(NOW - 86400000).toISOString(),
+    updatedAt: new Date(NOW - 86300000).toISOString(),
+  };
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [staleDone] }) });
+  const view = mount(props({ phase: "thinking" }));
+  await flushMicrotasks();
+  view.rerender();
+  view.click(byClass("dws-chip"));
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 0, "旧任务的进度条不该占着本轮的地方");
+});
+
+test("本轮里跑完的下载：这一轮看得见，本轮结束就收起", async () => {
+  const justDone = {
+    id: "fresh", status: "done", phase: "done", filename: "刚下好.exe",
+    totalBytes: 10, receivedBytes: 10, finishedAt: new Date(NOW - 5000).toISOString(),
+  };
+  // 本轮进行中：这一条要看得见（不是进度条画完就消失）。
+  const during = await loadBadge({ fetch: fakeFetch({ jobs: [justDone] }) });
+  const liveView = during(props({ phase: "thinking" }));
+  await flushMicrotasks();
+  liveView.rerender();
+  liveView.click(byClass("dws-chip"));
+  assert.equal(collect(liveView.tree, byClass("dws-dl")).length, 1, "本轮刚下完的要说一声");
+
+  // 本轮结束：收起来。
+  const after = await loadBadge({ fetch: fakeFetch({ jobs: [justDone] }) });
+  const doneView = after(props({ phase: "done" }));
+  await flushMicrotasks();
+  doneView.rerender();
+  doneView.click(byClass("dws-chip"));
+  assert.equal(collect(doneView.tree, byClass("dws-dl")).length, 0, "本轮一收，跑完的行跟着走");
+});
+
+test("还在跑的老任务不看轮次：一直留着，直到它自己跑完", async () => {
+  const oldRunning = {
+    ...RUNNING_JOB,
+    startedAt: new Date(NOW - 86400000).toISOString(),
+    updatedAt: new Date(NOW - 86300000).toISOString(),
+  };
+  const mount = await loadBadge({ fetch: fakeFetch({ jobs: [oldRunning] }) });
+  const view = mount(props({ phase: "done" }));
+  await flushMicrotasks();
+  view.rerender();
+  assert.equal(collect(view.tree, byClass("dws-dl")).length, 1, "正在下的不是历史，轮次结束也得留着");
 });
 
 test("接口挂了就安静：不崩、不画下载区", async () => {
@@ -1285,11 +1361,6 @@ test("接口挂了就安静：不崩、不画下载区", async () => {
 });
 
 // ── 下载进度：收起态与轮次结束后 ─────────────────────────────────────────────
-
-const RUNNING_JOB = {
-  id: "d9", status: "running", phase: "downloading",
-  totalBytes: 10000000, receivedBytes: 4000000, speedBps: 2000000, filename: "big.bin",
-};
 
 test("面板收起、下载还在跑：徽标旁留一条常驻进度，不跟着消失", async () => {
   const mount = await loadBadge({ fetch: fakeFetch({ jobs: [RUNNING_JOB] }) });

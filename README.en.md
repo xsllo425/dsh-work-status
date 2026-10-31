@@ -56,7 +56,7 @@ Open it:
 - **Context maintenance as normal rows** — compress / decompress / search appear inline with tool rows, so you see where they happened; they do not inflate step counts.
 - **Previous turn** — the last turn folds into one row under a divider, so the card still answers "what did it just do?" after a turn ends.
 - **Session log** — turns, steps, tool calls, per-turn reasoning/tool time, compression count and failures, last 24 turns, copyable as text.
-- **Download progress** (optional): a status-writing downloader on this machine (state under `~/.agent-downloads/jobs/`) adds a "Downloads" block — name, percent, speed, ETA, phase, at most 4 rows; a task whose process is gone but still says "downloading" is marked interrupted instead of pretending to run. Without that directory nothing is drawn. The read/write contract is in [docs/DOWNLOAD-STATUS-SPEC.md](docs/DOWNLOAD-STATUS-SPEC.md): any downloader that writes `status.json` the documented way plugs in — the card itself never downloads or cancels.
+- **Download progress** (optional): a status-writing downloader on this machine (state under `~/.agent-downloads/jobs/`) adds a "Downloads" block — name, percent, speed, ETA, phase, at most 4 rows; a task whose process is gone but still says "downloading" is marked interrupted instead of pretending to run. A finished row only shows during the turn it finished in and goes away with that turn, so yesterday's bar never sits on today's card; running tasks ignore turn boundaries. Without that directory nothing is drawn. The read/write contract is in [docs/DOWNLOAD-STATUS-SPEC.md](docs/DOWNLOAD-STATUS-SPEC.md): any downloader that writes `status.json` the documented way plugs in — the card itself never downloads or cancels.
 - **Plain-language gloss when you expand a step**: an expanded step gets one more line saying what it did ("run tests = verify the change broke nothing"). Glosses follow the action kind; tools with no entry get no line.
 
 ## What it deliberately does not do
@@ -122,7 +122,7 @@ To show "usually 3–8s" on the very first turns of a new session, the plugin re
 
 ```bash
 node --check lib/client.js && node --check lib/activity.js && node --check lib/index.js
-node --test tests/*.test.mjs          # 149 tests, no dependencies
+node --test tests/*.test.mjs          # 153 tests, no dependencies
 node scripts/check-manifest.mjs       # manifest, exports, patch row, icon, locales
 ```
 
